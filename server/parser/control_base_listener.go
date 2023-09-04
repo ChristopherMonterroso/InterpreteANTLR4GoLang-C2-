@@ -86,6 +86,12 @@ func (s *BaseControlListener) EnterAsignacionVector(ctx *AsignacionVectorContext
 // ExitAsignacionVector is called when production asignacionVector is exited.
 func (s *BaseControlListener) ExitAsignacionVector(ctx *AsignacionVectorContext) {}
 
+// EnterReasignacionVector is called when production reasignacionVector is entered.
+func (s *BaseControlListener) EnterReasignacionVector(ctx *ReasignacionVectorContext) {}
+
+// ExitReasignacionVector is called when production reasignacionVector is exited.
+func (s *BaseControlListener) ExitReasignacionVector(ctx *ReasignacionVectorContext) {}
+
 // EnterVectorAppend is called when production vectorAppend is entered.
 func (s *BaseControlListener) EnterVectorAppend(ctx *VectorAppendContext) {}
 
@@ -103,6 +109,60 @@ func (s *BaseControlListener) EnterVectorRemoveAt(ctx *VectorRemoveAtContext) {}
 
 // ExitVectorRemoveAt is called when production vectorRemoveAt is exited.
 func (s *BaseControlListener) ExitVectorRemoveAt(ctx *VectorRemoveAtContext) {}
+
+// EnterFuncSinTipoRetorno is called when production funcSinTipoRetorno is entered.
+func (s *BaseControlListener) EnterFuncSinTipoRetorno(ctx *FuncSinTipoRetornoContext) {}
+
+// ExitFuncSinTipoRetorno is called when production funcSinTipoRetorno is exited.
+func (s *BaseControlListener) ExitFuncSinTipoRetorno(ctx *FuncSinTipoRetornoContext) {}
+
+// EnterFuncParams_sinRetorno is called when production funcParams_sinRetorno is entered.
+func (s *BaseControlListener) EnterFuncParams_sinRetorno(ctx *FuncParams_sinRetornoContext) {}
+
+// ExitFuncParams_sinRetorno is called when production funcParams_sinRetorno is exited.
+func (s *BaseControlListener) ExitFuncParams_sinRetorno(ctx *FuncParams_sinRetornoContext) {}
+
+// EnterFunc_conRetorno_conTipo is called when production func_conRetorno_conTipo is entered.
+func (s *BaseControlListener) EnterFunc_conRetorno_conTipo(ctx *Func_conRetorno_conTipoContext) {}
+
+// ExitFunc_conRetorno_conTipo is called when production func_conRetorno_conTipo is exited.
+func (s *BaseControlListener) ExitFunc_conRetorno_conTipo(ctx *Func_conRetorno_conTipoContext) {}
+
+// EnterFuncParams_ConRetorno is called when production funcParams_ConRetorno is entered.
+func (s *BaseControlListener) EnterFuncParams_ConRetorno(ctx *FuncParams_ConRetornoContext) {}
+
+// ExitFuncParams_ConRetorno is called when production funcParams_ConRetorno is exited.
+func (s *BaseControlListener) ExitFuncParams_ConRetorno(ctx *FuncParams_ConRetornoContext) {}
+
+// EnterCallFunction is called when production callFunction is entered.
+func (s *BaseControlListener) EnterCallFunction(ctx *CallFunctionContext) {}
+
+// ExitCallFunction is called when production callFunction is exited.
+func (s *BaseControlListener) ExitCallFunction(ctx *CallFunctionContext) {}
+
+// EnterCallFunctionParams is called when production callFunctionParams is entered.
+func (s *BaseControlListener) EnterCallFunctionParams(ctx *CallFunctionParamsContext) {}
+
+// ExitCallFunctionParams is called when production callFunctionParams is exited.
+func (s *BaseControlListener) ExitCallFunctionParams(ctx *CallFunctionParamsContext) {}
+
+// EnterListaParamsCall is called when production listaParamsCall is entered.
+func (s *BaseControlListener) EnterListaParamsCall(ctx *ListaParamsCallContext) {}
+
+// ExitListaParamsCall is called when production listaParamsCall is exited.
+func (s *BaseControlListener) ExitListaParamsCall(ctx *ListaParamsCallContext) {}
+
+// EnterOneParam is called when production oneParam is entered.
+func (s *BaseControlListener) EnterOneParam(ctx *OneParamContext) {}
+
+// ExitOneParam is called when production oneParam is exited.
+func (s *BaseControlListener) ExitOneParam(ctx *OneParamContext) {}
+
+// EnterNumParams is called when production numParams is entered.
+func (s *BaseControlListener) EnterNumParams(ctx *NumParamsContext) {}
+
+// ExitNumParams is called when production numParams is exited.
+func (s *BaseControlListener) ExitNumParams(ctx *NumParamsContext) {}
 
 // EnterOneExpr is called when production oneExpr is entered.
 func (s *BaseControlListener) EnterOneExpr(ctx *OneExprContext) {}

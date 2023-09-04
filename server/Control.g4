@@ -10,7 +10,8 @@ CHAR       : '"' ~['\r\n] '"' ;
 //skip
 
 WS      : [ \n\t]+ -> skip ;
-
+COMMENT : '/*' .*? '*/' -> skip;
+LINE_COMMENT : '//' ~[\r\n]* -> skip;
 // rules
 
 prog: block EOF;
@@ -27,6 +28,7 @@ stmt: assignstmt
     | forstmt
     | guardstmt
     | vectorPpts
+    | funcstmt
     ;
 
 assignstmt
@@ -38,13 +40,31 @@ assignstmt
     | ID '-=' expr                       # decremento
     | var_type ID ':' '[' primitivo ']' '=' '['']'          # asignacionVectorVacio
     | var_type ID ':' '[' primitivo ']' '=' '['listaExp']'          # asignacionVector
+    | ID '['expr']' '=' expr # reasignacionVector
     ;
 
 vectorPpts
     : ID '.' 'append' '('expr')' #vectorAppend
-    | ID '.' 'removeLast' '('expr')' #vectorRemoveLast
+    | ID '.' 'removeLast' '('')' #vectorRemoveLast
     | ID '.' 'remove' '(' 'at' ':' expr ')' #vectorRemoveAt
     ;
+funcstmt
+    : 'func' ID '('')' '{' block ('return')? '}' #funcSinTipoRetorno
+    | 'func' ID '('listaParams')' '{' block '}' #funcParams_sinRetorno
+    | 'func' ID '('')' '->' primitivo '{'block 'return' expr '}' #func_conRetorno_conTipo
+    | 'func' ID '('listaParams')' '->' primitivo '{'block 'return' expr '}' #funcParams_ConRetorno 
+    | ID '('')' #callFunction
+    | ID '('listaParamsCall')' #callFunctionParams
+    ;
+
+listaParamsCall
+    : ( ID ':')? ref='&'? expr (',' listaParamsCall)?
+    ;
+listaParams
+    : ext=(ID | '_' )? ID ':' ino='inout'? primitivo # oneParam
+    |  ext=(ID | '_' )? ID ':' ino='inout'? primitivo ',' listaParams #numParams
+    ;
+
 listaExp
     : expr #oneExpr
     | expr ',' listaExp # numExpr
@@ -106,6 +126,7 @@ expr
     | ID '.' 'isEmpty' #vectorIsEmpty
     | ID '.' 'count' #vectorCount
     | ID '['expr']'  #vectorGetElement
+    | ID '('')' #callFuncAsExpr
     ;
 
 

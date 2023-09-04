@@ -1,4 +1,4 @@
-h1{
+h1,h2{
     font-size:35px;
     text-align: center;
     text-decoration:solid;
@@ -13,4 +13,18 @@ button{
     font-weight: bold !important;
     border: '1px solid #ccc',
 
+}
+/* Estilos para la tabla */
+#lexersTable  {
+  background-color: white;
+  width: 70%; /* Ancho de la tabla, ajusta según tus necesidades */
+  margin: 0 auto; /* Centra la tabla horizontalmente */
+  border-radius: 10px;
+}
+
+#lexerTable th, #lexersTable td {
+  padding: 8px 12px; /* Espaciado interno de las celdas */
+  border: 5px solid black;
+  border-radius: 10px;
+  text-align: center; /* Alineación del texto en las celdas */
 }

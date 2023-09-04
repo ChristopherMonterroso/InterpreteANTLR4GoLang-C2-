@@ -7,8 +7,11 @@ import './App.css'
 function App() {
   const [editorContent, setEditorContent] = useState('');
   const [executionResult, setExecutionResult] = useState('Resultado de la ejecución...');
+  const [lexerErrors, setLexerErrors] = useState([])
+  const [syntaxErrors, setSyntaxErrors] = useState([])
+  const [semanticErrors, setSemanticErrors] = useState([])
   const fileInputRef = useRef(null);
-
+  const [showTables, setShowTables] = useState("none")
   const handleFileButtonClick = () => {
     fileInputRef.current.click();
   };
@@ -39,10 +42,13 @@ function App() {
       body: editorContent,
     });
     const response = await res.json(); // Recibir la respuesta como JSON
-   // Acceder al contenido utilizando la propiedad "data"
+    // Acceder al contenido utilizando la propiedad "data"
 
-  setExecutionResult(response.prints);
-  console.log(executionResult);
+    setExecutionResult(response.prints);
+    setLexerErrors(response.LexerErrors);
+    setSyntaxErrors(response.SyntaxErrors);
+    setSemanticErrors(response.SemanticErrors);
+    console.log(response.LexerErrors);
   };
 
   const readFileAsync = (file) => {
@@ -60,7 +66,9 @@ function App() {
       reader.readAsText(file);
     });
   };
-
+  const showTablesOk = () => {
+    setShowTables("block")
+  }
   return (
     <>
       <h1>T-Swift</h1>
@@ -75,7 +83,7 @@ function App() {
             onChange={(newContent) => setEditorContent(newContent)}
             editorProps={{ $blockScrolling: true }}
 
-            style={{ width: '100%', height: '300px', borderRadius: '5px',fontSize: '15px'}}
+            style={{ width: '100%', height: '300px', borderRadius: '5px', fontSize: '15px' }}
           />
         </div>
         <div style={{ marginLeft: '20px', width: "30%" }}>
@@ -94,7 +102,7 @@ function App() {
           </div>
           <div style={{ marginBottom: '20px' }}>
             <button style={{ width: '45%', marginRight: "38px" }}>Guardar como</button>
-            <button style={{ width: '45%' }}>Mostrar errores</button>
+            <button style={{ width: '45%' }} onClick={showTablesOk}>Mostrar errores</button>
           </div>
           <div>
             <button onClick={handleRunButtonClick}
@@ -105,10 +113,84 @@ function App() {
       <textarea
         value={executionResult}
         readOnly
-        style={{ width: '90%', height: '150px', marginLeft: "40px",
-                marginTop: '20px', border: '1px solid #ccc', borderRadius: '5px', 
-                padding: '10px', overflow: 'auto', fontSize: '15px'}}
+        style={{
+          width: '90%', height: '150px', marginLeft: "40px",
+          marginTop: '20px', border: '1px solid #ccc', borderRadius: '5px',
+          padding: '10px', overflow: 'auto', fontSize: '15px'
+        }}
       />
+      <div style={{ display: showTables, textAlign: "center" }}>
+        <h2>Errores léxicos:</h2>
+        {lexerErrors != null ? (
+          <table id='lexersTable'>
+            <thead>
+              <tr>
+                <th>Mensaje</th>
+                <th>Línea</th>
+                <th>Columna</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lexerErrors.map((error, index) => (
+                <tr key={index}>
+                  <td>{error.ErrorMessage}</td>
+                  <td>{error.Line}</td>
+                  <td>{error.Column}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ color: "white" }}>No se encontraron errores léxicos.</p>
+        )}
+        <h2>Errores sintácticos:</h2>
+        {syntaxErrors != null ? (
+          <table id='lexersTable'>
+            <thead>
+              <tr>
+                <th>Mensaje</th>
+                <th>Línea</th>
+                <th>Columna</th>
+              </tr>
+            </thead>
+            <tbody>
+              {syntaxErrors.map((error, index) => (
+                <tr key={index}>
+                  <td>{error.ErrorMessage}</td>
+                  <td>{error.Line}</td>
+                  <td>{error.Column}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ color: "white" }}>No se encontraron errores sintácticos.</p>
+        )}
+        <h2>Errores semánticos:</h2>
+        {semanticErrors != null ? (
+          <table id='lexersTable'>
+            <thead>
+              <tr>
+                <th>Mensaje</th>
+                <th>Línea</th>
+                <th>Columna</th>
+              </tr>
+            </thead>
+            <tbody>
+              {semanticErrors.map((error, index) => (
+                <tr key={index}>
+                  <td>{error.ErrorMessage}</td>
+                  <td>{error.Line}</td>
+                  <td>{error.Column}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ color: "white" }}>No se encontraron errores semánticos.</p>
+        )}
+      </div>
+
     </>
 
   );

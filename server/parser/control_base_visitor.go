@@ -51,6 +51,10 @@ func (v *BaseControlVisitor) VisitAsignacionVector(ctx *AsignacionVectorContext)
 	return v.VisitChildren(ctx)
 }
 
+func (v *BaseControlVisitor) VisitReasignacionVector(ctx *ReasignacionVectorContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
 func (v *BaseControlVisitor) VisitVectorAppend(ctx *VectorAppendContext) interface{} {
 	return v.VisitChildren(ctx)
 }
@@ -60,6 +64,42 @@ func (v *BaseControlVisitor) VisitVectorRemoveLast(ctx *VectorRemoveLastContext)
 }
 
 func (v *BaseControlVisitor) VisitVectorRemoveAt(ctx *VectorRemoveAtContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitFuncSinTipoRetorno(ctx *FuncSinTipoRetornoContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitFuncParams_sinRetorno(ctx *FuncParams_sinRetornoContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitFunc_conRetorno_conTipo(ctx *Func_conRetorno_conTipoContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitFuncParams_ConRetorno(ctx *FuncParams_ConRetornoContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitCallFunction(ctx *CallFunctionContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitCallFunctionParams(ctx *CallFunctionParamsContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitListaParamsCall(ctx *ListaParamsCallContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitOneParam(ctx *OneParamContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitNumParams(ctx *NumParamsContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 

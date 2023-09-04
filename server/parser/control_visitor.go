@@ -40,6 +40,9 @@ type ControlVisitor interface {
 	// Visit a parse tree produced by ControlParser#asignacionVector.
 	VisitAsignacionVector(ctx *AsignacionVectorContext) interface{}
 
+	// Visit a parse tree produced by ControlParser#reasignacionVector.
+	VisitReasignacionVector(ctx *ReasignacionVectorContext) interface{}
+
 	// Visit a parse tree produced by ControlParser#vectorAppend.
 	VisitVectorAppend(ctx *VectorAppendContext) interface{}
 
@@ -48,6 +51,33 @@ type ControlVisitor interface {
 
 	// Visit a parse tree produced by ControlParser#vectorRemoveAt.
 	VisitVectorRemoveAt(ctx *VectorRemoveAtContext) interface{}
+
+	// Visit a parse tree produced by ControlParser#funcSinTipoRetorno.
+	VisitFuncSinTipoRetorno(ctx *FuncSinTipoRetornoContext) interface{}
+
+	// Visit a parse tree produced by ControlParser#funcParams_sinRetorno.
+	VisitFuncParams_sinRetorno(ctx *FuncParams_sinRetornoContext) interface{}
+
+	// Visit a parse tree produced by ControlParser#func_conRetorno_conTipo.
+	VisitFunc_conRetorno_conTipo(ctx *Func_conRetorno_conTipoContext) interface{}
+
+	// Visit a parse tree produced by ControlParser#funcParams_ConRetorno.
+	VisitFuncParams_ConRetorno(ctx *FuncParams_ConRetornoContext) interface{}
+
+	// Visit a parse tree produced by ControlParser#callFunction.
+	VisitCallFunction(ctx *CallFunctionContext) interface{}
+
+	// Visit a parse tree produced by ControlParser#callFunctionParams.
+	VisitCallFunctionParams(ctx *CallFunctionParamsContext) interface{}
+
+	// Visit a parse tree produced by ControlParser#listaParamsCall.
+	VisitListaParamsCall(ctx *ListaParamsCallContext) interface{}
+
+	// Visit a parse tree produced by ControlParser#oneParam.
+	VisitOneParam(ctx *OneParamContext) interface{}
+
+	// Visit a parse tree produced by ControlParser#numParams.
+	VisitNumParams(ctx *NumParamsContext) interface{}
 
 	// Visit a parse tree produced by ControlParser#oneExpr.
 	VisitOneExpr(ctx *OneExprContext) interface{}

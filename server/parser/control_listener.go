@@ -40,6 +40,9 @@ type ControlListener interface {
 	// EnterAsignacionVector is called when entering the asignacionVector production.
 	EnterAsignacionVector(c *AsignacionVectorContext)
 
+	// EnterReasignacionVector is called when entering the reasignacionVector production.
+	EnterReasignacionVector(c *ReasignacionVectorContext)
+
 	// EnterVectorAppend is called when entering the vectorAppend production.
 	EnterVectorAppend(c *VectorAppendContext)
 
@@ -48,6 +51,33 @@ type ControlListener interface {
 
 	// EnterVectorRemoveAt is called when entering the vectorRemoveAt production.
 	EnterVectorRemoveAt(c *VectorRemoveAtContext)
+
+	// EnterFuncSinTipoRetorno is called when entering the funcSinTipoRetorno production.
+	EnterFuncSinTipoRetorno(c *FuncSinTipoRetornoContext)
+
+	// EnterFuncParams_sinRetorno is called when entering the funcParams_sinRetorno production.
+	EnterFuncParams_sinRetorno(c *FuncParams_sinRetornoContext)
+
+	// EnterFunc_conRetorno_conTipo is called when entering the func_conRetorno_conTipo production.
+	EnterFunc_conRetorno_conTipo(c *Func_conRetorno_conTipoContext)
+
+	// EnterFuncParams_ConRetorno is called when entering the funcParams_ConRetorno production.
+	EnterFuncParams_ConRetorno(c *FuncParams_ConRetornoContext)
+
+	// EnterCallFunction is called when entering the callFunction production.
+	EnterCallFunction(c *CallFunctionContext)
+
+	// EnterCallFunctionParams is called when entering the callFunctionParams production.
+	EnterCallFunctionParams(c *CallFunctionParamsContext)
+
+	// EnterListaParamsCall is called when entering the listaParamsCall production.
+	EnterListaParamsCall(c *ListaParamsCallContext)
+
+	// EnterOneParam is called when entering the oneParam production.
+	EnterOneParam(c *OneParamContext)
+
+	// EnterNumParams is called when entering the numParams production.
+	EnterNumParams(c *NumParamsContext)
 
 	// EnterOneExpr is called when entering the oneExpr production.
 	EnterOneExpr(c *OneExprContext)
@@ -172,6 +202,9 @@ type ControlListener interface {
 	// ExitAsignacionVector is called when exiting the asignacionVector production.
 	ExitAsignacionVector(c *AsignacionVectorContext)
 
+	// ExitReasignacionVector is called when exiting the reasignacionVector production.
+	ExitReasignacionVector(c *ReasignacionVectorContext)
+
 	// ExitVectorAppend is called when exiting the vectorAppend production.
 	ExitVectorAppend(c *VectorAppendContext)
 
@@ -180,6 +213,33 @@ type ControlListener interface {
 
 	// ExitVectorRemoveAt is called when exiting the vectorRemoveAt production.
 	ExitVectorRemoveAt(c *VectorRemoveAtContext)
+
+	// ExitFuncSinTipoRetorno is called when exiting the funcSinTipoRetorno production.
+	ExitFuncSinTipoRetorno(c *FuncSinTipoRetornoContext)
+
+	// ExitFuncParams_sinRetorno is called when exiting the funcParams_sinRetorno production.
+	ExitFuncParams_sinRetorno(c *FuncParams_sinRetornoContext)
+
+	// ExitFunc_conRetorno_conTipo is called when exiting the func_conRetorno_conTipo production.
+	ExitFunc_conRetorno_conTipo(c *Func_conRetorno_conTipoContext)
+
+	// ExitFuncParams_ConRetorno is called when exiting the funcParams_ConRetorno production.
+	ExitFuncParams_ConRetorno(c *FuncParams_ConRetornoContext)
+
+	// ExitCallFunction is called when exiting the callFunction production.
+	ExitCallFunction(c *CallFunctionContext)
+
+	// ExitCallFunctionParams is called when exiting the callFunctionParams production.
+	ExitCallFunctionParams(c *CallFunctionParamsContext)
+
+	// ExitListaParamsCall is called when exiting the listaParamsCall production.
+	ExitListaParamsCall(c *ListaParamsCallContext)
+
+	// ExitOneParam is called when exiting the oneParam production.
+	ExitOneParam(c *OneParamContext)
+
+	// ExitNumParams is called when exiting the numParams production.
+	ExitNumParams(c *NumParamsContext)
 
 	// ExitOneExpr is called when exiting the oneExpr production.
 	ExitOneExpr(c *OneExprContext)
