@@ -92,6 +92,12 @@ func (s *BaseControlListener) EnterReasignacionVector(ctx *ReasignacionVectorCon
 // ExitReasignacionVector is called when production reasignacionVector is exited.
 func (s *BaseControlListener) ExitReasignacionVector(ctx *ReasignacionVectorContext) {}
 
+// EnterReasignacionMatrixTwoD is called when production reasignacionMatrixTwoD is entered.
+func (s *BaseControlListener) EnterReasignacionMatrixTwoD(ctx *ReasignacionMatrixTwoDContext) {}
+
+// ExitReasignacionMatrixTwoD is called when production reasignacionMatrixTwoD is exited.
+func (s *BaseControlListener) ExitReasignacionMatrixTwoD(ctx *ReasignacionMatrixTwoDContext) {}
+
 // EnterVectorAppend is called when production vectorAppend is entered.
 func (s *BaseControlListener) EnterVectorAppend(ctx *VectorAppendContext) {}
 
@@ -110,17 +116,47 @@ func (s *BaseControlListener) EnterVectorRemoveAt(ctx *VectorRemoveAtContext) {}
 // ExitVectorRemoveAt is called when production vectorRemoveAt is exited.
 func (s *BaseControlListener) ExitVectorRemoveAt(ctx *VectorRemoveAtContext) {}
 
-// EnterFuncSinTipoRetorno is called when production funcSinTipoRetorno is entered.
-func (s *BaseControlListener) EnterFuncSinTipoRetorno(ctx *FuncSinTipoRetornoContext) {}
+// EnterMatrixTwoD is called when production matrixTwoD is entered.
+func (s *BaseControlListener) EnterMatrixTwoD(ctx *MatrixTwoDContext) {}
 
-// ExitFuncSinTipoRetorno is called when production funcSinTipoRetorno is exited.
-func (s *BaseControlListener) ExitFuncSinTipoRetorno(ctx *FuncSinTipoRetornoContext) {}
+// ExitMatrixTwoD is called when production matrixTwoD is exited.
+func (s *BaseControlListener) ExitMatrixTwoD(ctx *MatrixTwoDContext) {}
 
-// EnterFuncParams_sinRetorno is called when production funcParams_sinRetorno is entered.
-func (s *BaseControlListener) EnterFuncParams_sinRetorno(ctx *FuncParams_sinRetornoContext) {}
+// EnterMatrixThreeD is called when production matrixThreeD is entered.
+func (s *BaseControlListener) EnterMatrixThreeD(ctx *MatrixThreeDContext) {}
 
-// ExitFuncParams_sinRetorno is called when production funcParams_sinRetorno is exited.
-func (s *BaseControlListener) ExitFuncParams_sinRetorno(ctx *FuncParams_sinRetornoContext) {}
+// ExitMatrixThreeD is called when production matrixThreeD is exited.
+func (s *BaseControlListener) ExitMatrixThreeD(ctx *MatrixThreeDContext) {}
+
+// EnterDefMatrix is called when production defMatrix is entered.
+func (s *BaseControlListener) EnterDefMatrix(ctx *DefMatrixContext) {}
+
+// ExitDefMatrix is called when production defMatrix is exited.
+func (s *BaseControlListener) ExitDefMatrix(ctx *DefMatrixContext) {}
+
+// EnterListaValores_Mat is called when production listaValores_Mat is entered.
+func (s *BaseControlListener) EnterListaValores_Mat(ctx *ListaValores_MatContext) {}
+
+// ExitListaValores_Mat is called when production listaValores_Mat is exited.
+func (s *BaseControlListener) ExitListaValores_Mat(ctx *ListaValores_MatContext) {}
+
+// EnterLista_Expresiones is called when production lista_Expresiones is entered.
+func (s *BaseControlListener) EnterLista_Expresiones(ctx *Lista_ExpresionesContext) {}
+
+// ExitLista_Expresiones is called when production lista_Expresiones is exited.
+func (s *BaseControlListener) ExitLista_Expresiones(ctx *Lista_ExpresionesContext) {}
+
+// EnterListaValores_Mat2 is called when production listaValores_Mat2 is entered.
+func (s *BaseControlListener) EnterListaValores_Mat2(ctx *ListaValores_Mat2Context) {}
+
+// ExitListaValores_Mat2 is called when production listaValores_Mat2 is exited.
+func (s *BaseControlListener) ExitListaValores_Mat2(ctx *ListaValores_Mat2Context) {}
+
+// EnterFunc_sinRetorno is called when production func_sinRetorno is entered.
+func (s *BaseControlListener) EnterFunc_sinRetorno(ctx *Func_sinRetornoContext) {}
+
+// ExitFunc_sinRetorno is called when production func_sinRetorno is exited.
+func (s *BaseControlListener) ExitFunc_sinRetorno(ctx *Func_sinRetornoContext) {}
 
 // EnterFunc_conRetorno_conTipo is called when production func_conRetorno_conTipo is entered.
 func (s *BaseControlListener) EnterFunc_conRetorno_conTipo(ctx *Func_conRetorno_conTipoContext) {}
@@ -128,23 +164,11 @@ func (s *BaseControlListener) EnterFunc_conRetorno_conTipo(ctx *Func_conRetorno_
 // ExitFunc_conRetorno_conTipo is called when production func_conRetorno_conTipo is exited.
 func (s *BaseControlListener) ExitFunc_conRetorno_conTipo(ctx *Func_conRetorno_conTipoContext) {}
 
-// EnterFuncParams_ConRetorno is called when production funcParams_ConRetorno is entered.
-func (s *BaseControlListener) EnterFuncParams_ConRetorno(ctx *FuncParams_ConRetornoContext) {}
-
-// ExitFuncParams_ConRetorno is called when production funcParams_ConRetorno is exited.
-func (s *BaseControlListener) ExitFuncParams_ConRetorno(ctx *FuncParams_ConRetornoContext) {}
-
 // EnterCallFunction is called when production callFunction is entered.
 func (s *BaseControlListener) EnterCallFunction(ctx *CallFunctionContext) {}
 
 // ExitCallFunction is called when production callFunction is exited.
 func (s *BaseControlListener) ExitCallFunction(ctx *CallFunctionContext) {}
-
-// EnterCallFunctionParams is called when production callFunctionParams is entered.
-func (s *BaseControlListener) EnterCallFunctionParams(ctx *CallFunctionParamsContext) {}
-
-// ExitCallFunctionParams is called when production callFunctionParams is exited.
-func (s *BaseControlListener) ExitCallFunctionParams(ctx *CallFunctionParamsContext) {}
 
 // EnterListaParamsCall is called when production listaParamsCall is entered.
 func (s *BaseControlListener) EnterListaParamsCall(ctx *ListaParamsCallContext) {}
@@ -176,6 +200,12 @@ func (s *BaseControlListener) EnterNumExpr(ctx *NumExprContext) {}
 // ExitNumExpr is called when production numExpr is exited.
 func (s *BaseControlListener) ExitNumExpr(ctx *NumExprContext) {}
 
+// EnterReturnstmt is called when production returnstmt is entered.
+func (s *BaseControlListener) EnterReturnstmt(ctx *ReturnstmtContext) {}
+
+// ExitReturnstmt is called when production returnstmt is exited.
+func (s *BaseControlListener) ExitReturnstmt(ctx *ReturnstmtContext) {}
+
 // EnterPrintlnstmt is called when production printlnstmt is entered.
 func (s *BaseControlListener) EnterPrintlnstmt(ctx *PrintlnstmtContext) {}
 
@@ -188,11 +218,11 @@ func (s *BaseControlListener) EnterPrintstmt(ctx *PrintstmtContext) {}
 // ExitPrintstmt is called when production printstmt is exited.
 func (s *BaseControlListener) ExitPrintstmt(ctx *PrintstmtContext) {}
 
-// EnterIfNormal is called when production ifNormal is entered.
-func (s *BaseControlListener) EnterIfNormal(ctx *IfNormalContext) {}
+// EnterElse_if is called when production else_if is entered.
+func (s *BaseControlListener) EnterElse_if(ctx *Else_ifContext) {}
 
-// ExitIfNormal is called when production ifNormal is exited.
-func (s *BaseControlListener) ExitIfNormal(ctx *IfNormalContext) {}
+// ExitElse_if is called when production else_if is exited.
+func (s *BaseControlListener) ExitElse_if(ctx *Else_ifContext) {}
 
 // EnterElse is called when production else is entered.
 func (s *BaseControlListener) EnterElse(ctx *ElseContext) {}
@@ -200,11 +230,11 @@ func (s *BaseControlListener) EnterElse(ctx *ElseContext) {}
 // ExitElse is called when production else is exited.
 func (s *BaseControlListener) ExitElse(ctx *ElseContext) {}
 
-// EnterElse_if is called when production else_if is entered.
-func (s *BaseControlListener) EnterElse_if(ctx *Else_ifContext) {}
+// EnterIfNormal is called when production ifNormal is entered.
+func (s *BaseControlListener) EnterIfNormal(ctx *IfNormalContext) {}
 
-// ExitElse_if is called when production else_if is exited.
-func (s *BaseControlListener) ExitElse_if(ctx *Else_ifContext) {}
+// ExitIfNormal is called when production ifNormal is exited.
+func (s *BaseControlListener) ExitIfNormal(ctx *IfNormalContext) {}
 
 // EnterSwitchstmt is called when production switchstmt is entered.
 func (s *BaseControlListener) EnterSwitchstmt(ctx *SwitchstmtContext) {}
@@ -260,6 +290,12 @@ func (s *BaseControlListener) EnterBoolExpr(ctx *BoolExprContext) {}
 // ExitBoolExpr is called when production BoolExpr is exited.
 func (s *BaseControlListener) ExitBoolExpr(ctx *BoolExprContext) {}
 
+// EnterToInt is called when production toInt is entered.
+func (s *BaseControlListener) EnterToInt(ctx *ToIntContext) {}
+
+// ExitToInt is called when production toInt is exited.
+func (s *BaseControlListener) ExitToInt(ctx *ToIntContext) {}
+
 // EnterFloatExpr is called when production FloatExpr is entered.
 func (s *BaseControlListener) EnterFloatExpr(ctx *FloatExprContext) {}
 
@@ -272,23 +308,11 @@ func (s *BaseControlListener) EnterIdExpr(ctx *IdExprContext) {}
 // ExitIdExpr is called when production IdExpr is exited.
 func (s *BaseControlListener) ExitIdExpr(ctx *IdExprContext) {}
 
-// EnterParExpr is called when production ParExpr is entered.
-func (s *BaseControlListener) EnterParExpr(ctx *ParExprContext) {}
+// EnterToFloat is called when production toFloat is entered.
+func (s *BaseControlListener) EnterToFloat(ctx *ToFloatContext) {}
 
-// ExitParExpr is called when production ParExpr is exited.
-func (s *BaseControlListener) ExitParExpr(ctx *ParExprContext) {}
-
-// EnterVectorGetElement is called when production vectorGetElement is entered.
-func (s *BaseControlListener) EnterVectorGetElement(ctx *VectorGetElementContext) {}
-
-// ExitVectorGetElement is called when production vectorGetElement is exited.
-func (s *BaseControlListener) ExitVectorGetElement(ctx *VectorGetElementContext) {}
-
-// EnterStrExpr is called when production StrExpr is entered.
-func (s *BaseControlListener) EnterStrExpr(ctx *StrExprContext) {}
-
-// ExitStrExpr is called when production StrExpr is exited.
-func (s *BaseControlListener) ExitStrExpr(ctx *StrExprContext) {}
+// ExitToFloat is called when production toFloat is exited.
+func (s *BaseControlListener) ExitToFloat(ctx *ToFloatContext) {}
 
 // EnterVectorIsEmpty is called when production vectorIsEmpty is entered.
 func (s *BaseControlListener) EnterVectorIsEmpty(ctx *VectorIsEmptyContext) {}
@@ -296,17 +320,17 @@ func (s *BaseControlListener) EnterVectorIsEmpty(ctx *VectorIsEmptyContext) {}
 // ExitVectorIsEmpty is called when production vectorIsEmpty is exited.
 func (s *BaseControlListener) ExitVectorIsEmpty(ctx *VectorIsEmptyContext) {}
 
-// EnterNotExpr is called when production NotExpr is entered.
-func (s *BaseControlListener) EnterNotExpr(ctx *NotExprContext) {}
+// EnterAccesoMatrixTwoD is called when production accesoMatrixTwoD is entered.
+func (s *BaseControlListener) EnterAccesoMatrixTwoD(ctx *AccesoMatrixTwoDContext) {}
 
-// ExitNotExpr is called when production NotExpr is exited.
-func (s *BaseControlListener) ExitNotExpr(ctx *NotExprContext) {}
+// ExitAccesoMatrixTwoD is called when production accesoMatrixTwoD is exited.
+func (s *BaseControlListener) ExitAccesoMatrixTwoD(ctx *AccesoMatrixTwoDContext) {}
 
-// EnterIntExpr is called when production IntExpr is entered.
-func (s *BaseControlListener) EnterIntExpr(ctx *IntExprContext) {}
+// EnterNilExpr is called when production nilExpr is entered.
+func (s *BaseControlListener) EnterNilExpr(ctx *NilExprContext) {}
 
-// ExitIntExpr is called when production IntExpr is exited.
-func (s *BaseControlListener) ExitIntExpr(ctx *IntExprContext) {}
+// ExitNilExpr is called when production nilExpr is exited.
+func (s *BaseControlListener) ExitNilExpr(ctx *NilExprContext) {}
 
 // EnterOpExpr is called when production OpExpr is entered.
 func (s *BaseControlListener) EnterOpExpr(ctx *OpExprContext) {}
@@ -325,6 +349,54 @@ func (s *BaseControlListener) EnterVectorCount(ctx *VectorCountContext) {}
 
 // ExitVectorCount is called when production vectorCount is exited.
 func (s *BaseControlListener) ExitVectorCount(ctx *VectorCountContext) {}
+
+// EnterNegExpr is called when production negExpr is entered.
+func (s *BaseControlListener) EnterNegExpr(ctx *NegExprContext) {}
+
+// ExitNegExpr is called when production negExpr is exited.
+func (s *BaseControlListener) ExitNegExpr(ctx *NegExprContext) {}
+
+// EnterParExpr is called when production ParExpr is entered.
+func (s *BaseControlListener) EnterParExpr(ctx *ParExprContext) {}
+
+// ExitParExpr is called when production ParExpr is exited.
+func (s *BaseControlListener) ExitParExpr(ctx *ParExprContext) {}
+
+// EnterCallFuncAsExpr is called when production callFuncAsExpr is entered.
+func (s *BaseControlListener) EnterCallFuncAsExpr(ctx *CallFuncAsExprContext) {}
+
+// ExitCallFuncAsExpr is called when production callFuncAsExpr is exited.
+func (s *BaseControlListener) ExitCallFuncAsExpr(ctx *CallFuncAsExprContext) {}
+
+// EnterVectorGetElement is called when production vectorGetElement is entered.
+func (s *BaseControlListener) EnterVectorGetElement(ctx *VectorGetElementContext) {}
+
+// ExitVectorGetElement is called when production vectorGetElement is exited.
+func (s *BaseControlListener) ExitVectorGetElement(ctx *VectorGetElementContext) {}
+
+// EnterStrExpr is called when production StrExpr is entered.
+func (s *BaseControlListener) EnterStrExpr(ctx *StrExprContext) {}
+
+// ExitStrExpr is called when production StrExpr is exited.
+func (s *BaseControlListener) ExitStrExpr(ctx *StrExprContext) {}
+
+// EnterToString is called when production toString is entered.
+func (s *BaseControlListener) EnterToString(ctx *ToStringContext) {}
+
+// ExitToString is called when production toString is exited.
+func (s *BaseControlListener) ExitToString(ctx *ToStringContext) {}
+
+// EnterNotExpr is called when production NotExpr is entered.
+func (s *BaseControlListener) EnterNotExpr(ctx *NotExprContext) {}
+
+// ExitNotExpr is called when production NotExpr is exited.
+func (s *BaseControlListener) ExitNotExpr(ctx *NotExprContext) {}
+
+// EnterIntExpr is called when production IntExpr is entered.
+func (s *BaseControlListener) EnterIntExpr(ctx *IntExprContext) {}
+
+// ExitIntExpr is called when production IntExpr is exited.
+func (s *BaseControlListener) ExitIntExpr(ctx *IntExprContext) {}
 
 // EnterPrimitivo is called when production primitivo is entered.
 func (s *BaseControlListener) EnterPrimitivo(ctx *PrimitivoContext) {}

@@ -43,6 +43,9 @@ type ControlListener interface {
 	// EnterReasignacionVector is called when entering the reasignacionVector production.
 	EnterReasignacionVector(c *ReasignacionVectorContext)
 
+	// EnterReasignacionMatrixTwoD is called when entering the reasignacionMatrixTwoD production.
+	EnterReasignacionMatrixTwoD(c *ReasignacionMatrixTwoDContext)
+
 	// EnterVectorAppend is called when entering the vectorAppend production.
 	EnterVectorAppend(c *VectorAppendContext)
 
@@ -52,23 +55,32 @@ type ControlListener interface {
 	// EnterVectorRemoveAt is called when entering the vectorRemoveAt production.
 	EnterVectorRemoveAt(c *VectorRemoveAtContext)
 
-	// EnterFuncSinTipoRetorno is called when entering the funcSinTipoRetorno production.
-	EnterFuncSinTipoRetorno(c *FuncSinTipoRetornoContext)
+	// EnterMatrixTwoD is called when entering the matrixTwoD production.
+	EnterMatrixTwoD(c *MatrixTwoDContext)
 
-	// EnterFuncParams_sinRetorno is called when entering the funcParams_sinRetorno production.
-	EnterFuncParams_sinRetorno(c *FuncParams_sinRetornoContext)
+	// EnterMatrixThreeD is called when entering the matrixThreeD production.
+	EnterMatrixThreeD(c *MatrixThreeDContext)
+
+	// EnterDefMatrix is called when entering the defMatrix production.
+	EnterDefMatrix(c *DefMatrixContext)
+
+	// EnterListaValores_Mat is called when entering the listaValores_Mat production.
+	EnterListaValores_Mat(c *ListaValores_MatContext)
+
+	// EnterLista_Expresiones is called when entering the lista_Expresiones production.
+	EnterLista_Expresiones(c *Lista_ExpresionesContext)
+
+	// EnterListaValores_Mat2 is called when entering the listaValores_Mat2 production.
+	EnterListaValores_Mat2(c *ListaValores_Mat2Context)
+
+	// EnterFunc_sinRetorno is called when entering the func_sinRetorno production.
+	EnterFunc_sinRetorno(c *Func_sinRetornoContext)
 
 	// EnterFunc_conRetorno_conTipo is called when entering the func_conRetorno_conTipo production.
 	EnterFunc_conRetorno_conTipo(c *Func_conRetorno_conTipoContext)
 
-	// EnterFuncParams_ConRetorno is called when entering the funcParams_ConRetorno production.
-	EnterFuncParams_ConRetorno(c *FuncParams_ConRetornoContext)
-
 	// EnterCallFunction is called when entering the callFunction production.
 	EnterCallFunction(c *CallFunctionContext)
-
-	// EnterCallFunctionParams is called when entering the callFunctionParams production.
-	EnterCallFunctionParams(c *CallFunctionParamsContext)
 
 	// EnterListaParamsCall is called when entering the listaParamsCall production.
 	EnterListaParamsCall(c *ListaParamsCallContext)
@@ -85,20 +97,23 @@ type ControlListener interface {
 	// EnterNumExpr is called when entering the numExpr production.
 	EnterNumExpr(c *NumExprContext)
 
+	// EnterReturnstmt is called when entering the returnstmt production.
+	EnterReturnstmt(c *ReturnstmtContext)
+
 	// EnterPrintlnstmt is called when entering the printlnstmt production.
 	EnterPrintlnstmt(c *PrintlnstmtContext)
 
 	// EnterPrintstmt is called when entering the printstmt production.
 	EnterPrintstmt(c *PrintstmtContext)
 
-	// EnterIfNormal is called when entering the ifNormal production.
-	EnterIfNormal(c *IfNormalContext)
+	// EnterElse_if is called when entering the else_if production.
+	EnterElse_if(c *Else_ifContext)
 
 	// EnterElse is called when entering the else production.
 	EnterElse(c *ElseContext)
 
-	// EnterElse_if is called when entering the else_if production.
-	EnterElse_if(c *Else_ifContext)
+	// EnterIfNormal is called when entering the ifNormal production.
+	EnterIfNormal(c *IfNormalContext)
 
 	// EnterSwitchstmt is called when entering the switchstmt production.
 	EnterSwitchstmt(c *SwitchstmtContext)
@@ -127,29 +142,26 @@ type ControlListener interface {
 	// EnterBoolExpr is called when entering the BoolExpr production.
 	EnterBoolExpr(c *BoolExprContext)
 
+	// EnterToInt is called when entering the toInt production.
+	EnterToInt(c *ToIntContext)
+
 	// EnterFloatExpr is called when entering the FloatExpr production.
 	EnterFloatExpr(c *FloatExprContext)
 
 	// EnterIdExpr is called when entering the IdExpr production.
 	EnterIdExpr(c *IdExprContext)
 
-	// EnterParExpr is called when entering the ParExpr production.
-	EnterParExpr(c *ParExprContext)
-
-	// EnterVectorGetElement is called when entering the vectorGetElement production.
-	EnterVectorGetElement(c *VectorGetElementContext)
-
-	// EnterStrExpr is called when entering the StrExpr production.
-	EnterStrExpr(c *StrExprContext)
+	// EnterToFloat is called when entering the toFloat production.
+	EnterToFloat(c *ToFloatContext)
 
 	// EnterVectorIsEmpty is called when entering the vectorIsEmpty production.
 	EnterVectorIsEmpty(c *VectorIsEmptyContext)
 
-	// EnterNotExpr is called when entering the NotExpr production.
-	EnterNotExpr(c *NotExprContext)
+	// EnterAccesoMatrixTwoD is called when entering the accesoMatrixTwoD production.
+	EnterAccesoMatrixTwoD(c *AccesoMatrixTwoDContext)
 
-	// EnterIntExpr is called when entering the IntExpr production.
-	EnterIntExpr(c *IntExprContext)
+	// EnterNilExpr is called when entering the nilExpr production.
+	EnterNilExpr(c *NilExprContext)
 
 	// EnterOpExpr is called when entering the OpExpr production.
 	EnterOpExpr(c *OpExprContext)
@@ -159,6 +171,30 @@ type ControlListener interface {
 
 	// EnterVectorCount is called when entering the vectorCount production.
 	EnterVectorCount(c *VectorCountContext)
+
+	// EnterNegExpr is called when entering the negExpr production.
+	EnterNegExpr(c *NegExprContext)
+
+	// EnterParExpr is called when entering the ParExpr production.
+	EnterParExpr(c *ParExprContext)
+
+	// EnterCallFuncAsExpr is called when entering the callFuncAsExpr production.
+	EnterCallFuncAsExpr(c *CallFuncAsExprContext)
+
+	// EnterVectorGetElement is called when entering the vectorGetElement production.
+	EnterVectorGetElement(c *VectorGetElementContext)
+
+	// EnterStrExpr is called when entering the StrExpr production.
+	EnterStrExpr(c *StrExprContext)
+
+	// EnterToString is called when entering the toString production.
+	EnterToString(c *ToStringContext)
+
+	// EnterNotExpr is called when entering the NotExpr production.
+	EnterNotExpr(c *NotExprContext)
+
+	// EnterIntExpr is called when entering the IntExpr production.
+	EnterIntExpr(c *IntExprContext)
 
 	// EnterPrimitivo is called when entering the primitivo production.
 	EnterPrimitivo(c *PrimitivoContext)
@@ -205,6 +241,9 @@ type ControlListener interface {
 	// ExitReasignacionVector is called when exiting the reasignacionVector production.
 	ExitReasignacionVector(c *ReasignacionVectorContext)
 
+	// ExitReasignacionMatrixTwoD is called when exiting the reasignacionMatrixTwoD production.
+	ExitReasignacionMatrixTwoD(c *ReasignacionMatrixTwoDContext)
+
 	// ExitVectorAppend is called when exiting the vectorAppend production.
 	ExitVectorAppend(c *VectorAppendContext)
 
@@ -214,23 +253,32 @@ type ControlListener interface {
 	// ExitVectorRemoveAt is called when exiting the vectorRemoveAt production.
 	ExitVectorRemoveAt(c *VectorRemoveAtContext)
 
-	// ExitFuncSinTipoRetorno is called when exiting the funcSinTipoRetorno production.
-	ExitFuncSinTipoRetorno(c *FuncSinTipoRetornoContext)
+	// ExitMatrixTwoD is called when exiting the matrixTwoD production.
+	ExitMatrixTwoD(c *MatrixTwoDContext)
 
-	// ExitFuncParams_sinRetorno is called when exiting the funcParams_sinRetorno production.
-	ExitFuncParams_sinRetorno(c *FuncParams_sinRetornoContext)
+	// ExitMatrixThreeD is called when exiting the matrixThreeD production.
+	ExitMatrixThreeD(c *MatrixThreeDContext)
+
+	// ExitDefMatrix is called when exiting the defMatrix production.
+	ExitDefMatrix(c *DefMatrixContext)
+
+	// ExitListaValores_Mat is called when exiting the listaValores_Mat production.
+	ExitListaValores_Mat(c *ListaValores_MatContext)
+
+	// ExitLista_Expresiones is called when exiting the lista_Expresiones production.
+	ExitLista_Expresiones(c *Lista_ExpresionesContext)
+
+	// ExitListaValores_Mat2 is called when exiting the listaValores_Mat2 production.
+	ExitListaValores_Mat2(c *ListaValores_Mat2Context)
+
+	// ExitFunc_sinRetorno is called when exiting the func_sinRetorno production.
+	ExitFunc_sinRetorno(c *Func_sinRetornoContext)
 
 	// ExitFunc_conRetorno_conTipo is called when exiting the func_conRetorno_conTipo production.
 	ExitFunc_conRetorno_conTipo(c *Func_conRetorno_conTipoContext)
 
-	// ExitFuncParams_ConRetorno is called when exiting the funcParams_ConRetorno production.
-	ExitFuncParams_ConRetorno(c *FuncParams_ConRetornoContext)
-
 	// ExitCallFunction is called when exiting the callFunction production.
 	ExitCallFunction(c *CallFunctionContext)
-
-	// ExitCallFunctionParams is called when exiting the callFunctionParams production.
-	ExitCallFunctionParams(c *CallFunctionParamsContext)
 
 	// ExitListaParamsCall is called when exiting the listaParamsCall production.
 	ExitListaParamsCall(c *ListaParamsCallContext)
@@ -247,20 +295,23 @@ type ControlListener interface {
 	// ExitNumExpr is called when exiting the numExpr production.
 	ExitNumExpr(c *NumExprContext)
 
+	// ExitReturnstmt is called when exiting the returnstmt production.
+	ExitReturnstmt(c *ReturnstmtContext)
+
 	// ExitPrintlnstmt is called when exiting the printlnstmt production.
 	ExitPrintlnstmt(c *PrintlnstmtContext)
 
 	// ExitPrintstmt is called when exiting the printstmt production.
 	ExitPrintstmt(c *PrintstmtContext)
 
-	// ExitIfNormal is called when exiting the ifNormal production.
-	ExitIfNormal(c *IfNormalContext)
+	// ExitElse_if is called when exiting the else_if production.
+	ExitElse_if(c *Else_ifContext)
 
 	// ExitElse is called when exiting the else production.
 	ExitElse(c *ElseContext)
 
-	// ExitElse_if is called when exiting the else_if production.
-	ExitElse_if(c *Else_ifContext)
+	// ExitIfNormal is called when exiting the ifNormal production.
+	ExitIfNormal(c *IfNormalContext)
 
 	// ExitSwitchstmt is called when exiting the switchstmt production.
 	ExitSwitchstmt(c *SwitchstmtContext)
@@ -289,29 +340,26 @@ type ControlListener interface {
 	// ExitBoolExpr is called when exiting the BoolExpr production.
 	ExitBoolExpr(c *BoolExprContext)
 
+	// ExitToInt is called when exiting the toInt production.
+	ExitToInt(c *ToIntContext)
+
 	// ExitFloatExpr is called when exiting the FloatExpr production.
 	ExitFloatExpr(c *FloatExprContext)
 
 	// ExitIdExpr is called when exiting the IdExpr production.
 	ExitIdExpr(c *IdExprContext)
 
-	// ExitParExpr is called when exiting the ParExpr production.
-	ExitParExpr(c *ParExprContext)
-
-	// ExitVectorGetElement is called when exiting the vectorGetElement production.
-	ExitVectorGetElement(c *VectorGetElementContext)
-
-	// ExitStrExpr is called when exiting the StrExpr production.
-	ExitStrExpr(c *StrExprContext)
+	// ExitToFloat is called when exiting the toFloat production.
+	ExitToFloat(c *ToFloatContext)
 
 	// ExitVectorIsEmpty is called when exiting the vectorIsEmpty production.
 	ExitVectorIsEmpty(c *VectorIsEmptyContext)
 
-	// ExitNotExpr is called when exiting the NotExpr production.
-	ExitNotExpr(c *NotExprContext)
+	// ExitAccesoMatrixTwoD is called when exiting the accesoMatrixTwoD production.
+	ExitAccesoMatrixTwoD(c *AccesoMatrixTwoDContext)
 
-	// ExitIntExpr is called when exiting the IntExpr production.
-	ExitIntExpr(c *IntExprContext)
+	// ExitNilExpr is called when exiting the nilExpr production.
+	ExitNilExpr(c *NilExprContext)
 
 	// ExitOpExpr is called when exiting the OpExpr production.
 	ExitOpExpr(c *OpExprContext)
@@ -321,6 +369,30 @@ type ControlListener interface {
 
 	// ExitVectorCount is called when exiting the vectorCount production.
 	ExitVectorCount(c *VectorCountContext)
+
+	// ExitNegExpr is called when exiting the negExpr production.
+	ExitNegExpr(c *NegExprContext)
+
+	// ExitParExpr is called when exiting the ParExpr production.
+	ExitParExpr(c *ParExprContext)
+
+	// ExitCallFuncAsExpr is called when exiting the callFuncAsExpr production.
+	ExitCallFuncAsExpr(c *CallFuncAsExprContext)
+
+	// ExitVectorGetElement is called when exiting the vectorGetElement production.
+	ExitVectorGetElement(c *VectorGetElementContext)
+
+	// ExitStrExpr is called when exiting the StrExpr production.
+	ExitStrExpr(c *StrExprContext)
+
+	// ExitToString is called when exiting the toString production.
+	ExitToString(c *ToStringContext)
+
+	// ExitNotExpr is called when exiting the NotExpr production.
+	ExitNotExpr(c *NotExprContext)
+
+	// ExitIntExpr is called when exiting the IntExpr production.
+	ExitIntExpr(c *IntExprContext)
 
 	// ExitPrimitivo is called when exiting the primitivo production.
 	ExitPrimitivo(c *PrimitivoContext)

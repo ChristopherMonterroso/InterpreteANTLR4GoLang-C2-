@@ -1,8 +1,11 @@
 package main
 
 import (
+	"Server/graph"
 	"Server/parser"
+	parsermatrix "Server/parserMatrix"
 	"fmt"
+	"io/ioutil"
 	"strconv"
 	"strings"
 
@@ -14,11 +17,20 @@ import (
 var LexerErrors []LexerError
 var SyntaxErrors []SyntaxErrs
 var SemanticErrors []SemantcErrs
+var Symbols []ArraySimbols
 
 type Environment struct {
 	parent    *Environment
 	variables map[string]Value
 	functions map[string]funcion
+}
+type ArraySimbols struct {
+	Id         string
+	TipoSymbol string
+	Tipo       string
+	Ambit      string
+	Line       int
+	Column     int
 }
 
 type LexerError struct {
@@ -43,7 +55,8 @@ type Value struct {
 	Ambit         string
 	PrimitiveType string
 	value         interface{}
-	isList        bool
+	isVector      bool
+	isMatrix      bool
 	Line          string
 	Column        string
 }
@@ -51,7 +64,9 @@ type param struct {
 	IDExterno     string
 	IDInterno     string
 	Inout         bool
+	idVarToInout  string
 	primitiveType string
+	isVector      bool
 	value         interface{}
 }
 type funcion struct {
@@ -59,22 +74,27 @@ type funcion struct {
 	params        []param
 	value         antlr.ParseTree
 	hasReturn     bool
+	exprToRetunr  antlr.ParseTree
 }
 
 type Visitor struct {
 	currentAmbit string
 	currentEnv   *Environment
 	parser.ControlVisitor
-	memory             map[string]Value
-	exprToSwitch       interface{}
-	exitSwitch         bool
-	outputBuilder      strings.Builder
-	SemanticErrors     strings.Builder
-	continueFlag       bool
-	breakFlag          bool
-	tmpList            []interface{}
-	tmpListParams      []param
-	tmpListaParamsCall []param
+	memory         map[string]Value
+	exprToSwitch   interface{}
+	exitSwitch     bool
+	outputBuilder  strings.Builder
+	SemanticErrors strings.Builder
+	continueFlag   bool
+	breakFlag      bool
+	returnFlag     bool
+	returnExpr     interface{}
+	tmpList        []interface{}
+	tmpListParams  []param
+	tmpMtrx2       bool
+	tmpMtrx3       bool
+	tmpListaMtrx   [][]interface{}
 }
 
 func AgregarErrorSemantico(mensaje string, lines string, columna string) {
@@ -84,6 +104,18 @@ func AgregarErrorSemantico(mensaje string, lines string, columna string) {
 		Column:       columna,
 	}
 	SemanticErrors = append(SemanticErrors, newError)
+
+}
+func AgregarSimbolo(id string, tipoSimbolo string, tipo string, ambit string, line int, column int) {
+	newSymbol := ArraySimbols{
+		Id:         id,
+		TipoSymbol: tipo,
+		Tipo:       tipoSimbolo,
+		Ambit:      ambit,
+		Line:       line,
+		Column:     column,
+	}
+	Symbols = append(Symbols, newSymbol)
 
 }
 func (e *LexerError) SyntaxError(recognizer antlr.Recognizer, offendingSymbol interface{}, lineE int, columnE int, message string, er antlr.RecognitionException) {
@@ -117,8 +149,9 @@ func (v *Visitor) Visit(tree antlr.ParseTree) Value {
 		return v.VisitBlock(val)
 	case *parser.StmtContext:
 		return v.VisitStmt(val)
+	case *parser.ReturnstmtContext:
+		return v.VisitReturn(val)
 	case *parser.AsignacionContext:
-
 		return v.VisitAsignacion(val)
 	case *parser.AsignacionNoExprContext:
 		return v.VisitAsignacionNoExpr(val)
@@ -132,6 +165,10 @@ func (v *Visitor) Visit(tree antlr.ParseTree) Value {
 		return v.VisitDecremento(val)
 	case *parser.IfNormalContext:
 		return v.VisitIfNormal(val)
+	case *parser.ElseContext:
+		return v.VisitIfElse(val)
+	case *parser.Else_ifContext:
+		return v.VisitElse_If(val)
 
 	case *parser.AsignacionVectorVacioContext:
 		return v.VisitAsignacionVectorVacio(val)
@@ -155,10 +192,8 @@ func (v *Visitor) Visit(tree antlr.ParseTree) Value {
 		return v.VisitRemoveAt(val)
 	case *parser.ReasignacionVectorContext:
 		return v.VisitReasignacionVector(val)
-	case *parser.ElseContext:
-		return v.VisitIfElse(val)
-	case *parser.Else_ifContext:
-		return v.VisitElse_If(val)
+	case *parser.ReasignacionMatrixTwoDContext:
+		return v.VisitReasignacionMatrixTwoD(val)
 
 	case *parser.SwitchstmtContext:
 		return v.VisitSwitchstmt(val)
@@ -173,7 +208,20 @@ func (v *Visitor) Visit(tree antlr.ParseTree) Value {
 		return v.VisitPrintlnstmt(val)
 	case *parser.WhilestmtContext:
 		return v.VisitWhilestmt(val)
-
+	case *parser.AccesoMatrixTwoDContext:
+		return v.VisitAccesoMatrixTwoD(val)
+	case *parser.MatrixTwoDContext:
+		return v.VisitMatrixTwoD(val)
+	case *parser.MatrixThreeDContext:
+		return v.VisitMatrixThreeD(val)
+	case *parser.DefMatrixContext:
+		return v.VisitDefMatrix(val)
+	case *parser.ListaValores_MatContext:
+		return v.VisitListaValores_Mat(val)
+	case *parser.ListaValores_Mat2Context:
+		return v.VisitListaValores_Mat2(val)
+	case *parser.Lista_ExpresionesContext:
+		return v.VisitListaExpresiones(val)
 	case *parser.ForNormalContext:
 		return v.VisitForNormal(val)
 	case *parser.ForEachContext:
@@ -185,16 +233,16 @@ func (v *Visitor) Visit(tree antlr.ParseTree) Value {
 	case *parser.PrintstmtContext:
 		return v.VisitPrintstmt(val)
 
-	case *parser.FuncSinTipoRetornoContext:
-		return v.VisitFuncSinTipoRetorno(val)
-	case *parser.FuncParams_sinRetornoContext:
-		return v.VisitFuncParams_sinRetorno(val)
+	case *parser.Func_sinRetornoContext:
+		return v.VisitFunc_sinRetorno(val)
 	case *parser.CallFunctionContext:
 		return v.VisitCallFunction(val)
-	case *parser.CallFunctionParamsContext:
-		return v.VisitCallFunctionParams(val)
 	case *parser.ListaParamsCallContext:
 		return v.VisitListaParamsCall(val)
+	case *parser.Func_conRetorno_conTipoContext:
+		return v.Visitfunc_conRetorno_conTipo(val)
+	case *parser.CallFuncAsExprContext:
+		return v.VisitcallFuncAsExpr(val)
 
 	case *parser.OneParamContext:
 		return v.VisitOneParam(val)
@@ -202,6 +250,8 @@ func (v *Visitor) Visit(tree antlr.ParseTree) Value {
 		return v.VisitNumParams(val)
 	case *parser.OpExprContext:
 		return v.VisitOpExpr(val)
+	case *parser.NilExprContext:
+		return v.VisitNilExpr(val)
 	case *parser.IntExprContext:
 		return v.VisitIntExpr(val)
 	case *parser.FloatExprContext:
@@ -220,19 +270,26 @@ func (v *Visitor) Visit(tree antlr.ParseTree) Value {
 		return v.VisitPrimitivo(val)
 	case *parser.Transfer_sentenceContext:
 		return v.VisitTransferSentence(val)
+	case *parser.ToStringContext:
+		return v.VisitToString(val)
+	case *parser.ToIntContext:
+		return v.VisitToInt(val)
+	case *parser.ToFloatContext:
+		return v.VisitToFloat(val)
+	case *parser.ParExprContext:
+		return v.VisitParExpr(val)
+	case *parser.NotExprContext:
+		return v.VisitNotExpr(val)
+	case *parser.NegExprContext:
+		return v.VisitNegExpr(val)
 	default:
-		panic("Unknown context " + val.GetText())
+		return Value{value: nil}
 	}
 
 }
 
 func (v *Visitor) VisitProg(ctx *parser.ProgContext) Value {
 	v.currentAmbit = "global"
-	return v.Visit(ctx.Block())
-}
-
-func (v *Visitor) VisitBlock(ctx *parser.BlockContext) Value {
-
 	localEnv := &Environment{
 		parent:    v.currentEnv,
 		variables: make(map[string]Value),
@@ -243,12 +300,22 @@ func (v *Visitor) VisitBlock(ctx *parser.BlockContext) Value {
 	defer func() {
 		v.currentEnv = previousEnv
 	}()
+	return v.Visit(ctx.Block())
+}
+
+func (v *Visitor) VisitBlock(ctx *parser.BlockContext) Value {
 	for i := 0; ctx.Stmt(i) != nil; i++ {
+
 		v.Visit(ctx.Stmt(i))
 		if v.continueFlag || v.breakFlag {
 			v.continueFlag = false
+
 			break
 		}
+		if v.returnFlag {
+			break
+		}
+
 	}
 	v.currentAmbit = "global"
 	return Value{value: true}
@@ -256,6 +323,7 @@ func (v *Visitor) VisitBlock(ctx *parser.BlockContext) Value {
 
 func (v *Visitor) VisitStmt(ctx *parser.StmtContext) Value {
 	if ctx.Assignstmt() != nil {
+
 		return v.Visit(ctx.Assignstmt())
 	}
 	if ctx.Ifstmt() != nil {
@@ -277,13 +345,23 @@ func (v *Visitor) VisitStmt(ctx *parser.StmtContext) Value {
 		return v.Visit(ctx.Forstmt())
 	}
 	if ctx.Guardstmt() != nil {
+
 		return v.Visit(ctx.Guardstmt())
 	}
 	if ctx.VectorPpts() != nil {
 		return v.Visit(ctx.VectorPpts())
 	}
+	if ctx.Matrixstmt() != nil {
+		return v.Visit(ctx.Matrixstmt())
+	}
 	if ctx.Funcstmt() != nil {
 		return v.Visit(ctx.Funcstmt())
+	}
+	if ctx.CallFunction() != nil {
+		return v.Visit(ctx.CallFunction())
+	}
+	if ctx.Returnstmt() != nil {
+		return v.Visit(ctx.Returnstmt())
 	}
 	return Value{value: true}
 }
@@ -309,6 +387,7 @@ func (v *Visitor) VisitAsignacion(ctx *parser.AsignacionContext) Value {
 				Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn()),
 				Ambit:         v.currentAmbit,
 			}
+			AgregarSimbolo(varID, "Variable", primitivetype.value.(string), v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
 			v.currentEnv.variables[varID] = newVar
 			return Value{value: true} //Continua el flujo del interprete
 		} else {
@@ -333,6 +412,8 @@ func (v *Visitor) VisitAsignacionNoExpr(ctx *parser.AsignacionNoExprContext) Val
 		Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn()),
 		Ambit:         v.currentAmbit,
 	}
+	AgregarSimbolo(varID, "Variable", primitivetype.value.(string), v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
 	return Value{value: true}
 
 }
@@ -349,6 +430,8 @@ func (v *Visitor) VisitAsignacionNoPrimitive(ctx *parser.AsignacionNoPrimitiveCo
 		Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn()),
 		Ambit:         v.currentAmbit,
 	}
+	AgregarSimbolo(varID, "Variable", getType(value.value), v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
 	return Value{value: true}
 
 }
@@ -358,6 +441,7 @@ func (v *Visitor) VisitReasignacion(ctx *parser.ReasignacionContext) Value {
 	var scope interface{}
 	var primitivetype interface{}
 	var currentValue interface{}
+
 	valueToAssign := v.Visit(ctx.Expr())
 	current := v.currentEnv
 	for current != nil {
@@ -365,32 +449,34 @@ func (v *Visitor) VisitReasignacion(ctx *parser.ReasignacionContext) Value {
 			scope = variable.scope
 			primitivetype = variable.PrimitiveType
 			currentValue = variable.value
+
 			if scope == "let" {
 				v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Variable tipo let, no puede ser modificada"+varID))
 				AgregarErrorSemantico("Variable tipo let, no puede ser modificada"+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
 				return Value{value: false}
 			} else {
 				if primitivetype == getType(valueToAssign.value) || currentValue == nil {
-
-					v.currentEnv.variables[varID] = Value{
+					// Realiza la reasignación en el ámbito actual
+					current.variables[varID] = Value{
 						scope:         scope.(string),
+						Ambit:         current.variables[varID].Ambit,
 						PrimitiveType: primitivetype.(string),
 						value:         valueToAssign.value,
+						isVector:      false,
 						Line:          current.variables[varID].Line,
 						Column:        current.variables[varID].Column,
-						Ambit:         current.variables[varID].Ambit,
 					}
+					return Value{value: true}
 				} else {
 					v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "No coincide la variable "+varID+" con el tipo primitivo"+primitivetype.(string)))
 					AgregarErrorSemantico("No coincide la variable "+varID+" con el tipo primitivo"+primitivetype.(string), strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
 					return Value{value: false}
 				}
 			}
-
-			break
 		}
 		current = current.parent
 	}
+
 	return Value{value: true}
 }
 
@@ -420,6 +506,8 @@ func (v *Visitor) VisitAsignacionVectorVacio(ctx *parser.AsignacionVectorVacioCo
 		Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn()),
 		Ambit:         v.currentAmbit,
 	}
+	AgregarSimbolo(varID, "Variable", primitivetype.value.(string), v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
 	return Value{value: true}
 }
 
@@ -468,17 +556,20 @@ func (v *Visitor) VisitAsignacionVector(ctx *parser.AsignacionVectorContext) Val
 			scope:         "var",
 			PrimitiveType: primitivoType,
 			value:         convertedSlice,
-			isList:        true,
+			isVector:      true,
 			Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
 			Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn()),
 			Ambit:         v.currentAmbit,
 		}
 		fmt.Println("vector agregado", v.tmpList)
+		AgregarSimbolo(varID, "Variable", primitivoType, v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
 		v.tmpList = nil
 	}
 	return Value{value: true}
 }
 func (v *Visitor) VisitReasignacionVector(ctx *parser.ReasignacionVectorContext) Value {
+	fmt.Println("en reasignacion")
 	varID := ctx.ID().GetText()
 	var scope interface{}
 	var primitivetype interface{}
@@ -486,7 +577,7 @@ func (v *Visitor) VisitReasignacionVector(ctx *parser.ReasignacionVectorContext)
 	var ambit interface{}
 	var line interface{}
 	var column interface{}
-	var isList bool
+	var isVector bool
 	valueToAssign := v.Visit(ctx.Expr(1))
 	current := v.currentEnv
 	for current != nil {
@@ -495,7 +586,7 @@ func (v *Visitor) VisitReasignacionVector(ctx *parser.ReasignacionVectorContext)
 			value = variable.value
 			scope = variable.scope
 			ambit = variable.Ambit
-			isList = variable.isList
+			isVector = variable.isVector
 			line = variable.Line
 			column = variable.Column
 			break
@@ -504,7 +595,7 @@ func (v *Visitor) VisitReasignacionVector(ctx *parser.ReasignacionVectorContext)
 	}
 	var int64Value int64 = v.Visit(ctx.Expr(0)).value.(int64)
 	index := int(int64Value)
-	if isList {
+	if isVector {
 		switch primitivetype.(string) {
 		case "String":
 			sliceValue, ok := value.([]string)
@@ -518,7 +609,7 @@ func (v *Visitor) VisitReasignacionVector(ctx *parser.ReasignacionVectorContext)
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isList:        isList,
+					isVector:      isVector,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -537,7 +628,7 @@ func (v *Visitor) VisitReasignacionVector(ctx *parser.ReasignacionVectorContext)
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isList:        isList,
+					isVector:      isVector,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -556,7 +647,7 @@ func (v *Visitor) VisitReasignacionVector(ctx *parser.ReasignacionVectorContext)
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isList:        isList,
+					isVector:      isVector,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -571,7 +662,89 @@ func (v *Visitor) VisitReasignacionVector(ctx *parser.ReasignacionVectorContext)
 		//fmt.Printf("Elemento en el índice %d removido del slice de %s: %v\n", index, varContent.PrimitiveType, varContent.value)
 		return Value{value: true}
 	} else {
-		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable no es un vector"))
+		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable no es un vector sadfa"))
+		AgregarErrorSemantico("La variable no es un vector", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+		return Value{value: false}
+	}
+
+}
+func (v *Visitor) VisitReasignacionMatrixTwoD(ctx *parser.ReasignacionMatrixTwoDContext) Value {
+	varID := ctx.ID().GetText()
+	var scope interface{}
+	var primitivetype interface{}
+	var value interface{}
+	var ambit interface{}
+	var line interface{}
+	var column interface{}
+	var isMatrix bool
+	valueToAssign := v.Visit(ctx.Expr(2))
+	current := v.currentEnv
+	for current != nil {
+		if variable, ok := current.variables[varID]; ok {
+			primitivetype = variable.PrimitiveType
+			value = variable.value
+			scope = variable.scope
+			ambit = variable.Ambit
+			isMatrix = variable.isMatrix
+			line = variable.Line
+			column = variable.Column
+			break
+		}
+		current = current.parent
+	}
+	var int64Value int64 = v.Visit(ctx.Expr(0)).value.(int64)
+	index1 := int(int64Value)
+	int64Value = v.Visit(ctx.Expr(1)).value.(int64)
+	index2 := int(int64Value)
+	if isMatrix {
+		switch primitivetype.(string) {
+		case "String":
+			sliceValue, ok := value.([][]string)
+			if !ok || index1 < 0 || index1 >= len(sliceValue) {
+				v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Index incompatible para el vector "+varID))
+				AgregarErrorSemantico("Index incompatible para el vector "+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+				return Value{value: false}
+			} else {
+				sliceValue[index1][index2] = valueToAssign.value.(string)
+				current.variables[varID] = Value{
+					scope:         scope.(string),
+					PrimitiveType: primitivetype.(string),
+					value:         sliceValue,
+					isVector:      isMatrix,
+					Line:          line.(string),
+					Column:        column.(string),
+					Ambit:         ambit.(string),
+				}
+			}
+
+		case "Int":
+			sliceValue, ok := value.([][]int64)
+			if !ok || index1 < 0 || index1 >= len(sliceValue) {
+				v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Index incompatible para el vector "+varID))
+				AgregarErrorSemantico("Index incompatible para el vector "+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+				return Value{value: false}
+			} else {
+				sliceValue[index1][index2] = valueToAssign.value.(int64)
+				current.variables[varID] = Value{
+					scope:         scope.(string),
+					PrimitiveType: primitivetype.(string),
+					value:         sliceValue,
+					isVector:      isMatrix,
+					Line:          line.(string),
+					Column:        column.(string),
+					Ambit:         ambit.(string),
+				}
+			}
+
+		default:
+			fmt.Println("tipo primitivo desconocido")
+			return Value{value: false}
+		}
+
+		//fmt.Printf("Elemento en el índice %d removido del slice de %s: %v\n", index, varContent.PrimitiveType, varContent.value)
+		return Value{value: true}
+	} else {
+		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable no es un vector sadfa"))
 		AgregarErrorSemantico("La variable no es un vector", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
 		return Value{value: false}
 	}
@@ -724,8 +897,27 @@ func (v *Visitor) VisitDecremento(ctx *parser.DecrementoContext) Value {
 func (v *Visitor) VisitIfNormal(ctx *parser.IfNormalContext) Value {
 	v.currentAmbit = "if"
 	value, ok := v.Visit(ctx.Expr()).value.(bool)
+
 	if ok && value {
-		return v.Visit(ctx.Block())
+		localEnv := &Environment{
+			parent:    v.currentEnv,
+			variables: make(map[string]Value),
+			functions: make(map[string]funcion),
+		}
+		previousEnv := v.currentEnv
+		v.currentEnv = localEnv
+		defer func() {
+			v.currentEnv = previousEnv
+		}()
+		v.Visit(ctx.Block())
+		if ctx.Transfer_sentence() != nil {
+			hasTransferStc := ctx.Transfer_sentence().GetText()
+			if hasTransferStc == "break" {
+				v.breakFlag = true //
+			}
+		}
+		return Value{value: true}
+
 	}
 	return Value{value: false}
 }
@@ -734,17 +926,74 @@ func (v *Visitor) VisitIfElse(ctx *parser.ElseContext) Value {
 	v.currentAmbit = "if"
 	value, ok := v.Visit(ctx.Expr()).value.(bool)
 	if ok && value {
-		return v.Visit(ctx.Block(0))
+
+		localEnv := &Environment{
+			parent:    v.currentEnv,
+			variables: make(map[string]Value),
+			functions: make(map[string]funcion),
+		}
+		previousEnv := v.currentEnv
+		v.currentEnv = localEnv
+		defer func() {
+			v.currentEnv = previousEnv
+		}()
+		v.Visit(ctx.Block(0))
+		if ctx.Transfer_sentence(0) != nil {
+			hasTransferStc := ctx.Transfer_sentence(0).GetText()
+			if hasTransferStc == "break" {
+				v.breakFlag = true //
+			}
+		}
+		return Value{value: true}
 	} else {
+
 		v.currentAmbit = "else"
-		return v.Visit(ctx.Block(1))
+		localEnv := &Environment{
+			parent:    v.currentEnv,
+			variables: make(map[string]Value),
+			functions: make(map[string]funcion),
+		}
+		previousEnv := v.currentEnv
+		v.currentEnv = localEnv
+		defer func() {
+			v.currentEnv = previousEnv
+		}()
+		v.Visit(ctx.Block(1))
+		if ctx.Transfer_sentence(0) != nil {
+			hasTransferStc := ctx.Transfer_sentence(0).GetText()
+			if hasTransferStc == "break" {
+				v.breakFlag = true //
+			}
+		}
+		return Value{value: true}
 	}
 }
 func (v *Visitor) VisitElse_If(ctx *parser.Else_ifContext) Value {
 	v.currentAmbit = "if"
 	value, ok := v.Visit(ctx.Expr()).value.(bool)
+
 	if ok && value {
-		return v.Visit(ctx.Block())
+		localEnv := &Environment{
+			parent:    v.currentEnv,
+			variables: make(map[string]Value),
+			functions: make(map[string]funcion),
+		}
+		previousEnv := v.currentEnv
+		v.currentEnv = localEnv
+		defer func() {
+			v.currentEnv = previousEnv
+		}()
+		v.Visit(ctx.Block())
+		if ctx.Transfer_sentence() != nil {
+			hasTransferStc := ctx.Transfer_sentence().GetText()
+			if hasTransferStc == "break" {
+				v.breakFlag = true //
+			}
+			if hasTransferStc == "continue" {
+				v.continueFlag = true //
+			}
+		}
+		return Value{value: true}
 	} else {
 		return v.Visit(ctx.Ifstmt())
 	}
@@ -791,11 +1040,52 @@ func (v *Visitor) VisitUnDefault(ctx *parser.UnDefaultContext) Value {
 	return Value{value: false}
 }
 func (v *Visitor) VisitPrintstmt(ctx *parser.PrintstmtContext) Value {
-	value := v.Visit(ctx.Expr()).value
-	if getType(value) == "Character" {
-		value = asciiToChar(value)
+	contenido := ""
+	if ctx.AllExpr() != nil {
+		for i := 0; i < len(ctx.AllExpr()); i++ {
+			if i > 1 {
+				contenido += " "
+			}
+			value := v.Visit(ctx.Expr(i)).value
+			switch v := value.(type) {
+			case [][]int64:
+				value = fmt.Sprintf("%d", v)
+				contenido += value.(string) + " "
+			case [][][]int64:
+				value = fmt.Sprintf("%d", v)
+				contenido += value.(string) + " "
+			case []int64:
+				value = fmt.Sprintf("%d", v)
+				contenido += value.(string) + " "
+			case [][]string:
+				contenido += value.(string) + " "
+			case [][][]string:
+				contenido += value.(string) + " "
+			case []string:
+				contenido += value.(string) + " "
+			case int64:
+				value = fmt.Sprintf("%d", v)
+				contenido += value.(string) + " "
+			case float64:
+				value = fmt.Sprintf("%f", v)
+				contenido += value.(string) + " "
+			case string:
+				contenido += value.(string) + " "
+			case rune:
+				value = asciiToChar(value)
+				contenido += value.(string) + " "
+			case bool:
+				value = fmt.Sprintf("%t", v)
+				contenido += value.(string) + " "
+			case nil:
+				contenido += "nil" + " "
+			default:
+
+				fmt.Println("Tipo desconocido")
+			}
+		}
 	}
-	v.outputBuilder.WriteString(fmt.Sprintf("%v\n", value))
+	v.outputBuilder.WriteString(fmt.Sprintf("%v\n", contenido))
 	return Value{value: true}
 }
 
@@ -807,7 +1097,18 @@ func (v *Visitor) VisitPrintlnstmt(ctx *parser.PrintlnstmtContext) Value {
 func (v *Visitor) VisitWhilestmt(ctx *parser.WhilestmtContext) Value {
 	v.currentAmbit = "while"
 	value, ok := v.Visit(ctx.Expr()).value.(bool)
+
 	for ok && value {
+		localEnv := &Environment{
+			parent:    v.currentEnv,
+			variables: make(map[string]Value),
+			functions: make(map[string]funcion),
+		}
+		previousEnv := v.currentEnv
+		v.currentEnv = localEnv
+		defer func() {
+			v.currentEnv = previousEnv
+		}()
 		v.Visit(ctx.Block())
 		if v.breakFlag { // si encuentra un break se termina el ciclo
 			v.breakFlag = false
@@ -836,7 +1137,16 @@ func (v *Visitor) VisitForNormal(ctx *parser.ForNormalContext) Value {
 				value:         exp1.(int64),
 			}
 			loopBlock := ctx.Block()
-
+			localEnv := &Environment{
+				parent:    v.currentEnv,
+				variables: make(map[string]Value),
+				functions: make(map[string]funcion),
+			}
+			previousEnv := v.currentEnv
+			v.currentEnv = localEnv
+			defer func() {
+				v.currentEnv = previousEnv
+			}()
 			v.Visit(loopBlock)
 
 			if v.breakFlag { // si encuentra un break se termina el ciclo
@@ -865,6 +1175,16 @@ func (v *Visitor) VisitForEach(ctx *parser.ForEachContext) Value {
 				PrimitiveType: "Character",
 				value:         char,
 			}
+			localEnv := &Environment{
+				parent:    v.currentEnv,
+				variables: make(map[string]Value),
+				functions: make(map[string]funcion),
+			}
+			previousEnv := v.currentEnv
+			v.currentEnv = localEnv
+			defer func() {
+				v.currentEnv = previousEnv
+			}()
 			v.Visit(ctx.Block())
 			if v.breakFlag { // si encuentra un break se termina el ciclo
 				v.breakFlag = false
@@ -900,7 +1220,7 @@ func (v *Visitor) VisitVectorAppend(ctx *parser.VectorAppendContext) Value {
 	var ambit interface{}
 	var line interface{}
 	var column interface{}
-	var isList bool
+	var isVector bool
 	current := v.currentEnv
 	for current != nil {
 		if variable, ok := current.variables[varID]; ok {
@@ -908,7 +1228,7 @@ func (v *Visitor) VisitVectorAppend(ctx *parser.VectorAppendContext) Value {
 			value = variable.value
 			scope = variable.scope
 			ambit = variable.Ambit
-			isList = variable.isList
+			isVector = variable.isVector
 			line = variable.Line
 			column = variable.Column
 			break
@@ -918,7 +1238,7 @@ func (v *Visitor) VisitVectorAppend(ctx *parser.VectorAppendContext) Value {
 	exprValue := v.Visit(ctx.Expr()).value
 	primitive := getType(exprValue)
 
-	if isList {
+	if isVector {
 		if primitivetype == primitive {
 			switch primitivetype {
 			case "String":
@@ -934,7 +1254,7 @@ func (v *Visitor) VisitVectorAppend(ctx *parser.VectorAppendContext) Value {
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isList:        isList,
+					isVector:      isVector,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -953,7 +1273,7 @@ func (v *Visitor) VisitVectorAppend(ctx *parser.VectorAppendContext) Value {
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isList:        isList,
+					isVector:      isVector,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -971,7 +1291,7 @@ func (v *Visitor) VisitVectorAppend(ctx *parser.VectorAppendContext) Value {
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isList:        isList,
+					isVector:      isVector,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -1006,7 +1326,7 @@ func (v *Visitor) VisitVectorRemoveLast(ctx *parser.VectorRemoveLastContext) Val
 	var ambit interface{}
 	var line interface{}
 	var column interface{}
-	var isList bool
+	var isVector bool
 	current := v.currentEnv
 	for current != nil {
 		if variable, ok := current.variables[varID]; ok {
@@ -1014,14 +1334,14 @@ func (v *Visitor) VisitVectorRemoveLast(ctx *parser.VectorRemoveLastContext) Val
 			value = variable.value
 			scope = variable.scope
 			ambit = variable.Ambit
-			isList = variable.isList
+			isVector = variable.isVector
 			line = variable.Line
 			column = variable.Column
 			break
 		}
 		current = current.parent
 	}
-	if isList {
+	if isVector {
 		switch primitivetype {
 		case "String":
 			sliceValue, ok := value.([]string)
@@ -1033,7 +1353,7 @@ func (v *Visitor) VisitVectorRemoveLast(ctx *parser.VectorRemoveLastContext) Val
 				scope:         scope.(string),
 				PrimitiveType: primitivetype.(string),
 				value:         sliceValue,
-				isList:        isList,
+				isVector:      isVector,
 				Line:          line.(string),
 				Column:        column.(string),
 				Ambit:         ambit.(string),
@@ -1049,7 +1369,7 @@ func (v *Visitor) VisitVectorRemoveLast(ctx *parser.VectorRemoveLastContext) Val
 				scope:         scope.(string),
 				PrimitiveType: primitivetype.(string),
 				value:         sliceValue,
-				isList:        isList,
+				isVector:      isVector,
 				Line:          line.(string),
 				Column:        column.(string),
 				Ambit:         ambit.(string),
@@ -1065,7 +1385,7 @@ func (v *Visitor) VisitVectorRemoveLast(ctx *parser.VectorRemoveLastContext) Val
 				scope:         scope.(string),
 				PrimitiveType: primitivetype.(string),
 				value:         sliceValue,
-				isList:        isList,
+				isVector:      isVector,
 				Line:          line.(string),
 				Column:        column.(string),
 				Ambit:         ambit.(string),
@@ -1094,7 +1414,7 @@ func (v *Visitor) VisitRemoveAt(ctx *parser.VectorRemoveAtContext) Value {
 	var ambit interface{}
 	var line interface{}
 	var column interface{}
-	var isList bool
+	var isVector bool
 	current := v.currentEnv
 	for current != nil {
 		if variable, ok := current.variables[varID]; ok {
@@ -1102,7 +1422,7 @@ func (v *Visitor) VisitRemoveAt(ctx *parser.VectorRemoveAtContext) Value {
 			value = variable.value
 			scope = variable.scope
 			ambit = variable.Ambit
-			isList = variable.isList
+			isVector = variable.isVector
 			line = variable.Line
 			column = variable.Column
 			break
@@ -1111,7 +1431,7 @@ func (v *Visitor) VisitRemoveAt(ctx *parser.VectorRemoveAtContext) Value {
 	}
 	var int64Value int64 = v.Visit(ctx.Expr()).value.(int64)
 	index := int(int64Value)
-	if isList {
+	if isVector {
 		switch primitivetype.(string) {
 		case "String":
 			sliceValue, ok := value.([]string)
@@ -1125,7 +1445,7 @@ func (v *Visitor) VisitRemoveAt(ctx *parser.VectorRemoveAtContext) Value {
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isList:        isList,
+					isVector:      isVector,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -1144,7 +1464,7 @@ func (v *Visitor) VisitRemoveAt(ctx *parser.VectorRemoveAtContext) Value {
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isList:        isList,
+					isVector:      isVector,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -1163,7 +1483,7 @@ func (v *Visitor) VisitRemoveAt(ctx *parser.VectorRemoveAtContext) Value {
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isList:        isList,
+					isVector:      isVector,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -1346,24 +1666,229 @@ func (v *Visitor) VisitVectorGetElement(ctx *parser.VectorGetElementContext) Val
 	return Value{value: sliceValu}
 }
 
-func (v *Visitor) VisitFuncSinTipoRetorno(ctx *parser.FuncSinTipoRetornoContext) Value {
+func (v *Visitor) VisitMatrixTwoD(ctx *parser.MatrixTwoDContext) Value {
+	varID := ctx.ID().GetText()
+	primitivoType := v.Visit(ctx.Primitivo()).value.(string)
+	v.Visit(ctx.DefMatrix())
+	matrix := v.tmpListaMtrx
+	v.tmpListaMtrx = nil
+	if primitivoType == "Int" {
+		var matriz [][]int64
 
-	block := ctx.Block()
-	funcID := ctx.ID().GetText()
-	if v.DoesFuncExist(funcID) {
-		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La función "+funcID+" ya existe"))
-		AgregarErrorSemantico("La función "+funcID+" ya existe", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
-		return Value{value: false}
-	} else {
-		v.currentEnv.functions[funcID] = funcion{
-			value: block,
+		if v.DoesVarExist(varID) {
+			v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable ya existe"+varID))
+			AgregarErrorSemantico("La variable ya existe"+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+
+			return Value{value: false}
+
+		} else {
+			matriz = parsermatrix.ConvertirMatrizToInt(matrix)
+			v.currentEnv.variables[varID] = Value{
+				scope:         "var",
+				PrimitiveType: primitivoType,
+				value:         matriz,
+				isVector:      false,
+				isMatrix:      true,
+				Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+				Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn()),
+				Ambit:         v.currentAmbit,
+			}
+			AgregarSimbolo(varID, "Variable", primitivoType, v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
 		}
+
+	} else if primitivoType == "String" {
+		var matriz [][]string
+		if v.DoesVarExist(varID) {
+			v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable ya existe"+varID))
+			AgregarErrorSemantico("La variable ya existe"+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+
+			return Value{value: false}
+
+		} else {
+			matriz = parsermatrix.ConvertirMatrizToString(matrix)
+			v.currentEnv.variables[varID] = Value{
+				scope:         "var",
+				PrimitiveType: primitivoType,
+				value:         matriz,
+				isVector:      false,
+				isMatrix:      true,
+				Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+				Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn()),
+				Ambit:         v.currentAmbit,
+			}
+			AgregarSimbolo(varID, "Variable", primitivoType, v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
+		}
+	}
+	return Value{value: true}
+}
+
+func (v *Visitor) VisitDefMatrix(ctx *parser.DefMatrixContext) Value {
+	if ctx.ListaValores_Mat() != nil {
+		v.Visit(ctx.ListaValores_Mat())
 		return Value{value: true}
+	} else {
+		return Value{value: nil}
 	}
 
 }
-func (v *Visitor) VisitFuncParams_sinRetorno(ctx *parser.FuncParams_sinRetornoContext) Value {
+func (v *Visitor) VisitListaValores_Mat(ctx *parser.ListaValores_MatContext) Value {
 
+	if ctx.ListaValores_Mat2() != nil {
+		v.Visit(ctx.ListaValores_Mat2())
+
+		return Value{value: true}
+	} else {
+		return Value{value: nil}
+	}
+
+}
+func (v *Visitor) VisitListaValores_Mat2(ctx *parser.ListaValores_Mat2Context) Value {
+
+	if ctx.ListaValores_Mat2() != nil {
+		v.Visit(ctx.ListaValores_Mat2())
+
+	}
+	if ctx.ListaValores_Mat() != nil {
+		v.Visit(ctx.ListaValores_Mat())
+
+	}
+	if ctx.Lista_Expresiones() != nil {
+		v.Visit(ctx.Lista_Expresiones())
+
+	}
+	return Value{value: true}
+}
+func (v *Visitor) VisitListaExpresiones(ctx *parser.Lista_ExpresionesContext) Value {
+	var lista []interface{}
+	if ctx.AllExpr() != nil {
+		for i := 0; i < len(ctx.AllExpr()); i++ {
+
+			lista = append(lista, v.Visit(ctx.Expr(i)).value)
+
+		}
+		v.tmpListaMtrx = append(v.tmpListaMtrx, lista)
+	}
+	return Value{value: lista}
+}
+func (v *Visitor) VisitMatrixThreeD(ctx *parser.MatrixThreeDContext) Value {
+	var matrixThreeD [][][]interface{}
+	varID := ctx.ID().GetText()
+	primitivoType := v.Visit(ctx.Primitivo()).value.(string)
+	v.tmpMtrx3 = true
+	v.Visit(ctx.DefMatrix())
+	v.tmpMtrx3 = false
+	matrix := v.tmpListaMtrx
+	matrixThreeD = append(matrixThreeD, matrix)
+	v.tmpListaMtrx = nil
+	if primitivoType == "Int" {
+		var matriz [][][]int64
+
+		if v.DoesVarExist(varID) {
+			v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable ya existe"+varID))
+			AgregarErrorSemantico("La variable ya existe"+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+
+			return Value{value: false}
+
+		} else {
+			matriz = parsermatrix.ConvertirMatriz3ToInt(matrixThreeD)
+			v.currentEnv.variables[varID] = Value{
+				scope:         "var",
+				PrimitiveType: primitivoType,
+				value:         matriz,
+				isVector:      false,
+				isMatrix:      true,
+				Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+				Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn()),
+				Ambit:         v.currentAmbit,
+			}
+			AgregarSimbolo(varID, "Variable", primitivoType, v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
+		}
+
+	} else if primitivoType == "String" {
+		var matriz [][][]string
+		if v.DoesVarExist(varID) {
+			v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable ya existe"+varID))
+			AgregarErrorSemantico("La variable ya existe"+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+
+			return Value{value: false}
+
+		} else {
+			matriz = parsermatrix.ConvertirMatriz3ToString(matrixThreeD)
+			v.currentEnv.variables[varID] = Value{
+				scope:         "var",
+				PrimitiveType: primitivoType,
+				value:         matriz,
+				isVector:      false,
+				isMatrix:      true,
+				Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+				Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn()),
+				Ambit:         v.currentAmbit,
+			}
+			AgregarSimbolo(varID, "Variable", primitivoType, v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
+		}
+	}
+	return Value{value: true}
+
+}
+func (v *Visitor) VisitAccesoMatrixTwoD(ctx *parser.AccesoMatrixTwoDContext) Value {
+	varID := ctx.ID().GetText()
+	var primitivetype interface{}
+	var value interface{}
+	current := v.currentEnv
+	for current != nil {
+		if variable, ok := current.variables[varID]; ok {
+			primitivetype = variable.PrimitiveType
+			value = variable.value
+			break
+		}
+		current = current.parent
+	}
+	getSliceValue := func(value interface{}, primitiveType string, index1 int, index2 int) (interface{}, error) {
+		switch primitiveType {
+		case "String":
+			sliceValue, ok := value.([][]string)
+			if !ok {
+				return nil, fmt.Errorf("tipo de slice incorrecto")
+			}
+			if index1 < 0 || index1 >= len(sliceValue) {
+				v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Indice fuera de rango"))
+				AgregarErrorSemantico("Indice fuera de rango", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+
+				return nil, fmt.Errorf("índice fuera de rango")
+			}
+			return sliceValue[index1][index2], nil
+		case "Int":
+			sliceValue, ok := value.([][]int64)
+			if !ok {
+				return nil, fmt.Errorf("tipo de slice incorrecto")
+			}
+			if index1 < 0 || index1 >= len(sliceValue) {
+				v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Indice fuera de rango"))
+				AgregarErrorSemantico("Indice fuera de rango", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+
+				return nil, fmt.Errorf("índice fuera de rango")
+			}
+			return sliceValue[index1][index2], nil
+		default:
+			return nil, fmt.Errorf("tipo primitivo desconocido")
+		}
+	}
+	var int64Value int64 = v.Visit(ctx.Expr(0)).value.(int64)
+	index1 := int(int64Value)
+	int64Value = v.Visit(ctx.Expr(1)).value.(int64)
+	index2 := int(int64Value)
+	sliceValu, errSliceValue := getSliceValue(value, primitivetype.(string), index1, index2)
+	if errSliceValue != nil {
+		fmt.Println(errSliceValue)
+	}
+	return Value{value: sliceValu}
+}
+
+func (v *Visitor) VisitFunc_sinRetorno(ctx *parser.Func_sinRetornoContext) Value {
 	block := ctx.Block()
 	funcID := ctx.ID().GetText()
 	if v.DoesFuncExist(funcID) {
@@ -1373,14 +1898,17 @@ func (v *Visitor) VisitFuncParams_sinRetorno(ctx *parser.FuncParams_sinRetornoCo
 	} else {
 
 		//Agregar a la lista temporal como en los vectores :)
-		v.Visit(ctx.ListaParams())
-		fmt.Println(v.tmpListParams)
+		if ctx.ListaParams() != nil {
+			v.Visit(ctx.ListaParams())
+		}
 		v.currentEnv.functions[funcID] = funcion{
 			primitiveType: "",
 			params:        v.tmpListParams,
 			value:         block,
 			hasReturn:     false,
 		}
+		AgregarSimbolo(funcID, "Función", "--", v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
 		v.tmpListParams = nil
 		return Value{value: true}
 	}
@@ -1390,6 +1918,16 @@ func (v *Visitor) VisitFuncParams_sinRetorno(ctx *parser.FuncParams_sinRetornoCo
 func (v *Visitor) Visitfunc_conRetorno_conTipo(ctx *parser.Func_conRetorno_conTipoContext) Value {
 	block := ctx.Block()
 	funcID := ctx.ID().GetText()
+	primitivo := ctx.Primitivo().GetText()
+	var valueExpr antlr.ParseTree
+	if ctx.Expr() != nil {
+		valueExpr = ctx.Expr()
+	} else {
+		valueExpr = nil
+	}
+	if ctx.ListaParams() != nil {
+		v.Visit(ctx.ListaParams())
+	}
 	if v.DoesFuncExist(funcID) {
 		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La función "+funcID+" ya existe"))
 		AgregarErrorSemantico("La función "+funcID+" ya existe", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
@@ -1400,8 +1938,11 @@ func (v *Visitor) Visitfunc_conRetorno_conTipo(ctx *parser.Func_conRetorno_conTi
 			params:        v.tmpListParams,
 			value:         block,
 			hasReturn:     true,
+			exprToRetunr:  valueExpr,
 		}
+		AgregarSimbolo(funcID, "Función", primitivo, v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
 
+		v.tmpListParams = nil
 		return Value{value: true}
 	}
 }
@@ -1409,36 +1950,101 @@ func (v *Visitor) Visitfunc_conRetorno_conTipo(ctx *parser.Func_conRetorno_conTi
 func (v *Visitor) VisitCallFunction(ctx *parser.CallFunctionContext) Value {
 	funcID := ctx.ID().GetText()
 	v.currentAmbit = funcID
+	var parametros []param
 	if v.encontrarFunc(funcID) {
 		current := v.currentEnv
 		for current != nil {
 			if function, ok := current.functions[funcID]; ok {
-				v.Visit(function.value)
+				if len(function.params) > 0 {
+					if ctx.ListaParamsCall() != nil {
+						parametros = v.Visit(ctx.ListaParamsCall()).value.([]param)
 
-				break
-			}
-			current = current.parent
-		}
-	} else {
-		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La funcion "+funcID+" no existe "))
-		AgregarErrorSemantico("La funcion "+funcID+" no existe ", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
-		return Value{value: false}
-	}
-	return Value{value: true}
-}
-func (v *Visitor) VisitCallFunctionParams(ctx *parser.CallFunctionParamsContext) Value {
-	v.Visit(ctx.ListaParamsCall())
-	funcID := ctx.ID().GetText()
-	v.currentAmbit = funcID
-	if v.encontrarFunc(funcID) {
-		current := v.currentEnv
-		for current != nil {
-			if function, ok := current.functions[funcID]; ok {
-				if len(v.tmpListaParamsCall) != len(function.params) {
-					v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Faltan parametros en la función"+funcID))
-					AgregarErrorSemantico("Faltan parametros en la función"+funcID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+					}
+					if len(parametros) != len(function.params) {
+						fmt.Println("tamaño parametros que entran", len(parametros))
+						fmt.Println("tamaño parametros existentes", len(function.params))
+						v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Error en declaración de parametros, parametros de la función: "+strconv.Itoa(len(function.params))))
+						AgregarErrorSemantico("Error en declaración de parametros, parametros de la función: "+strconv.Itoa(len(function.params)), strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+							strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+						return Value{value: nil}
+					}
+					localEnv := &Environment{
+						parent:    v.currentEnv,
+						variables: make(map[string]Value),
+						functions: make(map[string]funcion),
+					}
+					previousEnv := v.currentEnv
+					v.currentEnv = localEnv
+					defer func() {
+						v.currentEnv = previousEnv
+					}()
+					for i := range parametros {
+						if function.params[i].IDExterno == "_" {
+							if function.params[i].Inout {
+								function.params[i].idVarToInout = parametros[i].idVarToInout
+							}
+							newVar := Value{
+								scope:         "var",
+								Ambit:         v.currentAmbit,
+								PrimitiveType: function.params[i].primitiveType,
+								value:         parametros[i].value,
+								isVector:      function.params[i].isVector,
+								Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+								Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn() + i),
+							}
+							v.currentEnv.variables[function.params[i].IDInterno] = newVar
+							AgregarSimbolo(function.params[i].IDInterno, "Variable", function.params[i].primitiveType, v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
 
-					return Value{value: false}
+						} else if function.params[i].IDExterno == parametros[i].IDInterno {
+							if function.params[i].Inout {
+
+								function.params[i].idVarToInout = parametros[i].idVarToInout
+							}
+							newVar := Value{
+								scope:         "var",
+								Ambit:         v.currentAmbit,
+								PrimitiveType: function.params[i].primitiveType,
+								value:         parametros[i].value,
+								isVector:      function.params[i].isVector,
+								Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+								Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn() + i),
+							}
+							v.currentEnv.variables[function.params[i].IDInterno] = newVar
+							AgregarSimbolo(function.params[i].IDInterno, "Variable", function.params[i].primitiveType, v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
+						}
+
+					}
+
+					v.Visit(function.value)
+					// después de haber ejecutado todas las sentencias recorro de nuevo los parametros buscar los inout y reasignar valores
+					for i := range parametros {
+						if function.params[i].Inout {
+
+							varID := parametros[i].idVarToInout
+							tmp := v.currentEnv
+
+							for tmp != nil {
+								if variable, ok := tmp.variables[varID]; ok {
+									tmp.variables[varID] = Value{
+										scope:         variable.scope,
+										Ambit:         variable.Ambit,
+										PrimitiveType: variable.PrimitiveType,
+										value:         v.currentEnv.variables[function.params[i].IDInterno].value,
+										isVector:      variable.isVector,
+										Line:          variable.Line,
+										Column:        variable.Column,
+									}
+									break
+								}
+
+								tmp = tmp.parent
+							}
+						}
+					}
+					v.returnFlag = false
+
+					return Value{value: nil}
 				} else {
 					localEnv := &Environment{
 						parent:    v.currentEnv,
@@ -1450,54 +2056,167 @@ func (v *Visitor) VisitCallFunctionParams(ctx *parser.CallFunctionParamsContext)
 					defer func() {
 						v.currentEnv = previousEnv
 					}()
-					for i := range v.tmpListaParamsCall {
-						if function.params[i].IDExterno == "_" {
-							v.currentEnv.variables[function.params[i].IDInterno] = Value{
-								scope:         "var",
-								Ambit:         v.currentAmbit,
-								PrimitiveType: function.params[i].primitiveType,
-								value:         v.tmpListaParamsCall[i].value,
-								isList:        false,
-								Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
-								Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn() + i),
-							}
-						} else if v.tmpListaParamsCall[i].IDInterno == function.params[i].IDExterno {
-							v.currentEnv.variables[function.params[i].IDInterno] = Value{
-								scope:         "var",
-								Ambit:         v.currentAmbit,
-								PrimitiveType: function.params[i].primitiveType,
-								value:         v.tmpListaParamsCall[i].value,
-								isList:        false,
-								Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
-								Column:        strconv.Itoa(ctx.ID().GetSymbol().GetLine() + i),
-							}
-
-						} else {
-							v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Error en llamada a función"))
-							AgregarErrorSemantico("Error en llamada a función", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
-							return Value{value: false}
-						}
-					}
+					v.Visit(function.value)
+					v.returnFlag = false
+					return Value{value: true}
 				}
-				v.Visit(function.value)
-				break
 			}
 			current = current.parent
 		}
-
 	} else {
-		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La funcion "+funcID+" no existe "))
-		AgregarErrorSemantico("La funcion "+funcID+" no existe ", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La funcion "+funcID+" no existe"))
+		AgregarErrorSemantico("La funcion "+funcID+" no exoste", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
 		return Value{value: false}
 	}
-
 	return Value{value: true}
+}
+
+func (v *Visitor) VisitcallFuncAsExpr(ctx *parser.CallFuncAsExprContext) Value {
+	v.returnFlag = false
+	funcID := ctx.ID().GetText()
+	v.currentAmbit = funcID
+	var parametros []param
+	if v.encontrarFunc(funcID) {
+		current := v.currentEnv
+		for current != nil {
+			if function, ok := current.functions[funcID]; ok {
+				if function.hasReturn {
+					if len(function.params) > 0 {
+						if ctx.ListaParamsCall() != nil {
+							parametros = v.Visit(ctx.ListaParamsCall()).value.([]param)
+
+						}
+						if len(parametros) != len(function.params) {
+							fmt.Println("tamaño parametros que entran", len(parametros))
+							fmt.Println("tamaño parametros existentes", len(function.params))
+							v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Error en declaración de parametros, parametros de la función: "+strconv.Itoa(len(function.params))))
+							AgregarErrorSemantico("Error en declaración de parametros, parametros de la función: "+strconv.Itoa(len(function.params)), strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+								strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+							return Value{value: nil}
+						}
+						localEnv := &Environment{
+							parent:    v.currentEnv,
+							variables: make(map[string]Value),
+							functions: make(map[string]funcion),
+						}
+						previousEnv := v.currentEnv
+						v.currentEnv = localEnv
+						defer func() {
+							v.currentEnv = previousEnv
+						}()
+						for i := range parametros {
+							if function.params[i].IDExterno == "_" {
+								if function.params[i].Inout {
+									function.params[i].idVarToInout = parametros[i].idVarToInout
+								}
+								newVar := Value{
+									scope:         "var",
+									Ambit:         v.currentAmbit,
+									PrimitiveType: function.params[i].primitiveType,
+									value:         parametros[i].value,
+									isVector:      function.params[i].isVector,
+									Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+									Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn() + i),
+								}
+								v.currentEnv.variables[function.params[i].IDInterno] = newVar
+								AgregarSimbolo(function.params[i].IDInterno, "Variable", function.params[i].primitiveType, v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
+							} else if function.params[i].IDExterno == parametros[i].IDInterno {
+								if function.params[i].Inout {
+
+									function.params[i].idVarToInout = parametros[i].idVarToInout
+								}
+								newVar := Value{
+									scope:         "var",
+									Ambit:         v.currentAmbit,
+									PrimitiveType: function.params[i].primitiveType,
+									value:         parametros[i].value,
+									isVector:      function.params[i].isVector,
+									Line:          strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+									Column:        strconv.Itoa(ctx.ID().GetSymbol().GetColumn() + i),
+								}
+								v.currentEnv.variables[function.params[i].IDInterno] = newVar
+								AgregarSimbolo(function.params[i].IDInterno, "Variable", function.params[i].primitiveType, v.currentAmbit, ctx.ID().GetSymbol().GetLine(), ctx.ID().GetSymbol().GetColumn())
+
+							}
+						}
+
+						v.Visit(function.value)
+						// después de haber ejecutado todas las sentencias recorro de nuevo los parametros buscar los inout y reasignar valores
+						for i := range parametros {
+							if function.params[i].Inout {
+
+								varID := parametros[i].idVarToInout
+								tmp := v.currentEnv
+
+								for tmp != nil {
+									if variable, ok := tmp.variables[varID]; ok {
+										tmp.variables[varID] = Value{
+											scope:         variable.scope,
+											Ambit:         variable.Ambit,
+											PrimitiveType: variable.PrimitiveType,
+											value:         v.currentEnv.variables[function.params[i].IDInterno].value,
+											isVector:      variable.isVector,
+											Line:          variable.Line,
+											Column:        variable.Column,
+										}
+										break
+									}
+
+									tmp = tmp.parent
+								}
+							}
+						}
+
+						if v.returnExpr != nil {
+							v.returnFlag = false
+							return Value{value: v.returnExpr}
+						}
+						v.returnFlag = false
+						return Value{value: nil}
+					} else {
+						localEnv := &Environment{
+							parent:    v.currentEnv,
+							variables: make(map[string]Value),
+							functions: make(map[string]funcion),
+						}
+						previousEnv := v.currentEnv
+						v.currentEnv = localEnv
+						defer func() {
+							v.currentEnv = previousEnv
+						}()
+						v.Visit(function.value)
+						if v.returnExpr != nil {
+							v.returnFlag = false
+							return Value{value: v.returnExpr}
+						}
+						v.returnFlag = false
+						return Value{value: nil}
+					}
+				} else {
+					v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La funcion "+funcID+" no devuelve una expresión"))
+					AgregarErrorSemantico("La funcion "+funcID+" no devuelve una expresión", strconv.Itoa(ctx.ID().GetSymbol().GetLine()),
+						strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+				}
+			}
+			current = current.parent
+		}
+	} else {
+		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La funcion "+funcID+" no existe"))
+		AgregarErrorSemantico("La funcion "+funcID+" no exoste", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+		return Value{value: nil}
+	}
+	return Value{value: nil}
 }
 
 func (v *Visitor) VisitIntExpr(ctx *parser.IntExprContext) Value {
 
 	i, _ := strconv.ParseInt(ctx.GetText(), 10, 64)
 	return Value{value: i}
+}
+func (v *Visitor) VisitNilExpr(ctx *parser.NilExprContext) Value {
+
+	return Value{value: nil}
 }
 
 func (v *Visitor) VisitFloatExpr(ctx *parser.FloatExprContext) Value {
@@ -1515,18 +2234,16 @@ func (v *Visitor) VisitCharExpr(ctx *parser.CharExprContext) Value {
 }
 
 func (v *Visitor) VisitIdExpr(ctx *parser.IdExprContext) Value {
-	varID := ctx.GetText()
-	if v.encontrarVariable(varID) {
-		varContent := v.getContentVariable(varID).value
+	varID := ctx.ID().GetText()
+	current := v.currentEnv
+	for current != nil {
+		if variable, ok := current.variables[varID]; ok {
+			return Value{value: variable.value}
+		}
 
-		return Value{value: varContent} //
-	} else {
-		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable "+varID+" no existe "))
-		AgregarErrorSemantico("La variable "+varID+" no existe ", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
-
-		//panic("no such variable: " + varID)
-		return Value{value: nil}
+		current = current.parent
 	}
+	return Value{value: nil}
 }
 
 // Funciones para asignaciones
@@ -1552,21 +2269,30 @@ func (v *Visitor) VisitOneExpr(ctx *parser.OneExprContext) Value {
 
 func (v *Visitor) VisitListaParamsCall(ctx *parser.ListaParamsCallContext) Value {
 	paramID := ""
-	if ctx.ID() != nil {
-		paramID = ctx.ID().GetText()
+	Parametros := make([]param, 0)
+	varID := ""
+	if ctx.AllExpr() != nil {
+		for index := 0; index < len(ctx.AllExpr()); index++ {
+			if ctx.ID(index) != nil {
+				paramID = ctx.ID(index).GetText()
+			}
+			if ctx.GetRef() != nil {
+				varID = ctx.Expr(index).GetText()
+			}
+
+			exprValue := v.Visit(ctx.Expr(index)).value
+			primiteType := getType(exprValue)
+			param := param{
+				IDInterno:     paramID,
+				value:         exprValue,
+				primitiveType: primiteType,
+				idVarToInout:  varID,
+			}
+			Parametros = append(Parametros, param)
+		}
 	}
-	exprValue := v.Visit(ctx.Expr()).value
-	primiteType := getType(exprValue)
-	param := param{
-		IDInterno:     paramID,
-		value:         exprValue,
-		primitiveType: primiteType,
-	}
-	v.tmpListaParamsCall = append(v.tmpListaParamsCall, param)
-	if ctx.ListaParamsCall() != nil {
-		v.Visit(ctx.ListaParamsCall())
-	}
-	return Value{value: true}
+
+	return Value{value: Parametros}
 }
 
 func (v *Visitor) VisitOneParam(ctx *parser.OneParamContext) Value {
@@ -1593,15 +2319,16 @@ func (v *Visitor) VisitOneParam(ctx *parser.OneParamContext) Value {
 		Inout:         hasInout,
 		primitiveType: primitiveType,
 	}
+
 	v.tmpListParams = append(v.tmpListParams, param)
 	return Value{value: true}
 }
 
 func (v *Visitor) VisitNumParams(ctx *parser.NumParamsContext) Value {
-	fmt.Println("en  num params")
 	IDExterno := ""
 	IDInterno := ""
 	hasInout := false
+	isVector := false
 	primitiveType := v.Visit(ctx.Primitivo()).value.(string)
 	if ctx.GetExt() != nil {
 		IDExterno = ctx.GetExt().GetText()
@@ -1615,12 +2342,17 @@ func (v *Visitor) VisitNumParams(ctx *parser.NumParamsContext) Value {
 	if ctx.GetIno() != nil {
 		hasInout = true
 	}
+	if ctx.GetIsVector() != nil {
+		isVector = true
+	}
 	firstParam := param{
 		IDExterno:     IDExterno,
 		IDInterno:     IDInterno,
 		Inout:         hasInout,
 		primitiveType: primitiveType,
+		isVector:      isVector,
 	}
+
 	v.tmpListParams = append(v.tmpListParams, firstParam)
 	// Visita el resto de los parámetros, si existen
 	if ctx.ListaParams() != nil {
@@ -1638,7 +2370,88 @@ func (v *Visitor) VisitNumExpr(ctx *parser.NumExprContext) Value {
 	}
 	return Value{value: true}
 }
+func (v *Visitor) VisitToString(ctx *parser.ToStringContext) Value {
+	value := v.Visit(ctx.Expr()).value
 
+	switch v := value.(type) {
+	case int64:
+		value = fmt.Sprintf("%d", v)
+	case float64:
+		value = fmt.Sprintf("%f", v)
+
+	case string:
+		break
+	case rune:
+		value = asciiToChar(value)
+
+	case bool:
+		value = fmt.Sprintf("%t", v)
+
+	case nil:
+		value = "nil"
+	default:
+		fmt.Println("Tipo desconocido")
+	}
+	return Value{value: value.(string)}
+}
+func (v *Visitor) VisitToFloat(ctx *parser.ToFloatContext) Value {
+	value := v.Visit(ctx.Expr()).value
+
+	floatValue, err := strconv.ParseFloat(value.(string), 64)
+	if err != nil {
+		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "No pudo realizarse el truncamiento a float"))
+		AgregarErrorSemantico("No pudo realizarse el truncamiento a float", "0", "0")
+		return Value{value: nil} // O manejar el error de otra manera
+	}
+	value = floatValue
+	return Value{value: value} //
+}
+func (v *Visitor) VisitToInt(ctx *parser.ToIntContext) Value {
+	value := v.Visit(ctx.Expr()).value
+
+	switch value.(type) {
+	case float64:
+		value = int64(value.(float64))
+	case string:
+		intValue, err := strconv.ParseInt(value.(string), 10, 64)
+		if err != nil {
+			v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "No pudo realizarse el truncamiento a int"))
+			AgregarErrorSemantico("No pudo realizarse el truncamiento a int", "0", "0")
+
+			return Value{value: nil} // O manejar el error de otra manera
+		}
+		value = intValue
+	default:
+		fmt.Println("Tipo desconocido")
+	}
+	return Value{value: value}
+}
+
+func (v *Visitor) VisitReturn(ctx *parser.ReturnstmtContext) Value {
+	v.returnFlag = true
+	expr := v.Visit(ctx.Expr()).value
+
+	v.returnExpr = expr
+	return Value{value: expr}
+}
+func (v *Visitor) VisitParExpr(ctx *parser.ParExprContext) Value {
+	expr := v.Visit(ctx.Expr()).value
+	return Value{value: expr}
+}
+func (v *Visitor) VisitNotExpr(ctx *parser.NotExprContext) Value {
+	expr := v.Visit(ctx.Expr()).value
+	if expr.(bool) {
+		expr = false
+	} else {
+		expr = true
+	}
+	return Value{value: expr}
+}
+func (v *Visitor) VisitNegExpr(ctx *parser.NegExprContext) Value {
+	expr := v.Visit(ctx.Expr()).value
+
+	return Value{value: 0 - expr.(int64)}
+}
 func (v *Visitor) VisitOpExpr(ctx *parser.OpExprContext) Value {
 	type_left := getType(v.Visit(ctx.GetLeft()).value)
 	type_right := getType(v.Visit(ctx.GetRight()).value)
@@ -1756,6 +2569,7 @@ func (v *Visitor) VisitOpExpr(ctx *parser.OpExprContext) Value {
 			}
 		}
 	case ">=":
+
 		if type_left == "Int" && type_right == "Int" {
 			if l.(int64) >= r.(int64) {
 				return Value{value: true}
@@ -1868,6 +2682,8 @@ func getType(value interface{}) string {
 		return "Float"
 	case rune:
 		return "Character"
+	case nil:
+		return "nil"
 	default:
 		fmt.Println("valor de ", v, " desconocido")
 		return "Unknown"
@@ -1895,6 +2711,7 @@ func (v *Visitor) encontrarFunc(varID string) bool {
 	}
 	return false
 }
+
 func (v *Visitor) getContentVariable(varID string) Value {
 	current := v.currentEnv
 	for current != nil {
@@ -1919,11 +2736,18 @@ func (v *Visitor) DoesFuncExist(varID string) bool {
 func asciiToChar(ascii interface{}) string {
 	return string(ascii.(int32))
 }
+
 func main() {
+
 	app := fiber.New()
 	app.Use(cors.New())
 	app.Post("/analyze", func(c *fiber.Ctx) error {
+		SemanticErrors = nil
+		LexerErrors = nil
+		SyntaxErrors = nil
+		Symbols = nil
 		prog := string(c.Body())
+
 		input := antlr.NewInputStream(prog)
 		lexer := parser.NewControlLexer(input)
 		getLexerErrors := &LexerError{}
@@ -1937,13 +2761,26 @@ func main() {
 		tree := p.Prog()
 		eval := Visitor{memory: make(map[string]Value)}
 		eval.Visit(tree)
+		graph.CreateGraph(prog)
 		return c.JSON(fiber.Map{
 			"prints":         eval.outputBuilder.String(),
 			"LexerErrors":    LexerErrors,
 			"SyntaxErrors":   SyntaxErrors,
 			"SemanticErrors": SemanticErrors,
+			"Symbols":        Symbols,
 		})
 
+	})
+
+	app.Get("/graph", func(c *fiber.Ctx) error {
+		// Lee el archivo SVG
+		svgContent, err := ioutil.ReadFile("cst_graph_tree.svg")
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error al leer el archivo SVG")
+		}
+
+		fmt.Println("SVG enviado...")
+		return c.Type("svg").Send(svgContent)
 	})
 
 	app.Listen(":8080")

@@ -55,6 +55,10 @@ func (v *BaseControlVisitor) VisitReasignacionVector(ctx *ReasignacionVectorCont
 	return v.VisitChildren(ctx)
 }
 
+func (v *BaseControlVisitor) VisitReasignacionMatrixTwoD(ctx *ReasignacionMatrixTwoDContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
 func (v *BaseControlVisitor) VisitVectorAppend(ctx *VectorAppendContext) interface{} {
 	return v.VisitChildren(ctx)
 }
@@ -67,11 +71,31 @@ func (v *BaseControlVisitor) VisitVectorRemoveAt(ctx *VectorRemoveAtContext) int
 	return v.VisitChildren(ctx)
 }
 
-func (v *BaseControlVisitor) VisitFuncSinTipoRetorno(ctx *FuncSinTipoRetornoContext) interface{} {
+func (v *BaseControlVisitor) VisitMatrixTwoD(ctx *MatrixTwoDContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BaseControlVisitor) VisitFuncParams_sinRetorno(ctx *FuncParams_sinRetornoContext) interface{} {
+func (v *BaseControlVisitor) VisitMatrixThreeD(ctx *MatrixThreeDContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitDefMatrix(ctx *DefMatrixContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitListaValores_Mat(ctx *ListaValores_MatContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitLista_Expresiones(ctx *Lista_ExpresionesContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitListaValores_Mat2(ctx *ListaValores_Mat2Context) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitFunc_sinRetorno(ctx *Func_sinRetornoContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
@@ -79,15 +103,7 @@ func (v *BaseControlVisitor) VisitFunc_conRetorno_conTipo(ctx *Func_conRetorno_c
 	return v.VisitChildren(ctx)
 }
 
-func (v *BaseControlVisitor) VisitFuncParams_ConRetorno(ctx *FuncParams_ConRetornoContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
 func (v *BaseControlVisitor) VisitCallFunction(ctx *CallFunctionContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *BaseControlVisitor) VisitCallFunctionParams(ctx *CallFunctionParamsContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
@@ -111,6 +127,10 @@ func (v *BaseControlVisitor) VisitNumExpr(ctx *NumExprContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
+func (v *BaseControlVisitor) VisitReturnstmt(ctx *ReturnstmtContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
 func (v *BaseControlVisitor) VisitPrintlnstmt(ctx *PrintlnstmtContext) interface{} {
 	return v.VisitChildren(ctx)
 }
@@ -119,7 +139,7 @@ func (v *BaseControlVisitor) VisitPrintstmt(ctx *PrintstmtContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BaseControlVisitor) VisitIfNormal(ctx *IfNormalContext) interface{} {
+func (v *BaseControlVisitor) VisitElse_if(ctx *Else_ifContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
@@ -127,7 +147,7 @@ func (v *BaseControlVisitor) VisitElse(ctx *ElseContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BaseControlVisitor) VisitElse_if(ctx *Else_ifContext) interface{} {
+func (v *BaseControlVisitor) VisitIfNormal(ctx *IfNormalContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
@@ -167,6 +187,10 @@ func (v *BaseControlVisitor) VisitBoolExpr(ctx *BoolExprContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
+func (v *BaseControlVisitor) VisitToInt(ctx *ToIntContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
 func (v *BaseControlVisitor) VisitFloatExpr(ctx *FloatExprContext) interface{} {
 	return v.VisitChildren(ctx)
 }
@@ -175,15 +199,7 @@ func (v *BaseControlVisitor) VisitIdExpr(ctx *IdExprContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BaseControlVisitor) VisitParExpr(ctx *ParExprContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *BaseControlVisitor) VisitVectorGetElement(ctx *VectorGetElementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *BaseControlVisitor) VisitStrExpr(ctx *StrExprContext) interface{} {
+func (v *BaseControlVisitor) VisitToFloat(ctx *ToFloatContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
@@ -191,11 +207,11 @@ func (v *BaseControlVisitor) VisitVectorIsEmpty(ctx *VectorIsEmptyContext) inter
 	return v.VisitChildren(ctx)
 }
 
-func (v *BaseControlVisitor) VisitNotExpr(ctx *NotExprContext) interface{} {
+func (v *BaseControlVisitor) VisitAccesoMatrixTwoD(ctx *AccesoMatrixTwoDContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BaseControlVisitor) VisitIntExpr(ctx *IntExprContext) interface{} {
+func (v *BaseControlVisitor) VisitNilExpr(ctx *NilExprContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
@@ -208,6 +224,38 @@ func (v *BaseControlVisitor) VisitCharExpr(ctx *CharExprContext) interface{} {
 }
 
 func (v *BaseControlVisitor) VisitVectorCount(ctx *VectorCountContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitNegExpr(ctx *NegExprContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitParExpr(ctx *ParExprContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitCallFuncAsExpr(ctx *CallFuncAsExprContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitVectorGetElement(ctx *VectorGetElementContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitStrExpr(ctx *StrExprContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitToString(ctx *ToStringContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitNotExpr(ctx *NotExprContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BaseControlVisitor) VisitIntExpr(ctx *IntExprContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
