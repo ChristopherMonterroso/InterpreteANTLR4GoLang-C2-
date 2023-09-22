@@ -662,7 +662,7 @@ func (v *Visitor) VisitReasignacionVector(ctx *parser.ReasignacionVectorContext)
 		//fmt.Printf("Elemento en el índice %d removido del slice de %s: %v\n", index, varContent.PrimitiveType, varContent.value)
 		return Value{value: true}
 	} else {
-		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable no es un vector sadfa"))
+		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable no es un vector "))
 		AgregarErrorSemantico("La variable no es un vector", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
 		return Value{value: false}
 	}
@@ -701,8 +701,8 @@ func (v *Visitor) VisitReasignacionMatrixTwoD(ctx *parser.ReasignacionMatrixTwoD
 		case "String":
 			sliceValue, ok := value.([][]string)
 			if !ok || index1 < 0 || index1 >= len(sliceValue) {
-				v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Index incompatible para el vector "+varID))
-				AgregarErrorSemantico("Index incompatible para el vector "+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+				v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Index incompatible para la matriz "+varID))
+				AgregarErrorSemantico("Index incompatible para la matriz "+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
 				return Value{value: false}
 			} else {
 				sliceValue[index1][index2] = valueToAssign.value.(string)
@@ -710,7 +710,7 @@ func (v *Visitor) VisitReasignacionMatrixTwoD(ctx *parser.ReasignacionMatrixTwoD
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isVector:      isMatrix,
+					isMatrix:      isMatrix,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -720,8 +720,8 @@ func (v *Visitor) VisitReasignacionMatrixTwoD(ctx *parser.ReasignacionMatrixTwoD
 		case "Int":
 			sliceValue, ok := value.([][]int64)
 			if !ok || index1 < 0 || index1 >= len(sliceValue) {
-				v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Index incompatible para el vector "+varID))
-				AgregarErrorSemantico("Index incompatible para el vector "+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+				v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "Index incompatible para la matriz "+varID))
+				AgregarErrorSemantico("Index incompatible para la matriz "+varID, strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
 				return Value{value: false}
 			} else {
 				sliceValue[index1][index2] = valueToAssign.value.(int64)
@@ -729,7 +729,7 @@ func (v *Visitor) VisitReasignacionMatrixTwoD(ctx *parser.ReasignacionMatrixTwoD
 					scope:         scope.(string),
 					PrimitiveType: primitivetype.(string),
 					value:         sliceValue,
-					isVector:      isMatrix,
+					isMatrix:      isMatrix,
 					Line:          line.(string),
 					Column:        column.(string),
 					Ambit:         ambit.(string),
@@ -744,8 +744,8 @@ func (v *Visitor) VisitReasignacionMatrixTwoD(ctx *parser.ReasignacionMatrixTwoD
 		//fmt.Printf("Elemento en el índice %d removido del slice de %s: %v\n", index, varContent.PrimitiveType, varContent.value)
 		return Value{value: true}
 	} else {
-		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable no es un vector sadfa"))
-		AgregarErrorSemantico("La variable no es un vector", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
+		v.outputBuilder.WriteString(fmt.Sprintf("%v\n", "La variable no es una matriz "))
+		AgregarErrorSemantico("La variable no es una matriz", strconv.Itoa(ctx.ID().GetSymbol().GetLine()), strconv.Itoa(ctx.ID().GetSymbol().GetColumn()))
 		return Value{value: false}
 	}
 
